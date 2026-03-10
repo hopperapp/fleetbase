@@ -1,0 +1,18 @@
+services:
+  application:
+    environment:
+      APP_KEY: "base64:YOUR_APP_KEY_HERE"
+      CONSOLE_HOST: "http://localhost:4200"
+      ENVIRONMENT: "development"
+      APP_DEBUG: "true"
+      GOOGLE_MAPS_API_KEY: "YOUR_GOOGLE_MAPS_API_KEY_HERE"
+      GOOGLE_MAPS_LOCALE: "us"
+      TWILIO_SID: "YOUR_TWILIO_SID_HERE"
+      TWILIO_TOKEN: "YOUR_TWILIO_TOKEN_HERE"
+      TWILIO_FROM: "YOUR_TWILIO_PHONE_NUMBER_HERE"
+  httpd:
+    volumes:
+      - ./custom/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./custom/swagger/storefront:/fleetbase/api/public/storefront/docs:ro
+      - ./custom/swagger/storefront-admin:/fleetbase/api/public/storefront/docs-admin:ro
+      - ./custom/swagger/fleetops-navigator:/fleetbase/api/public/fleetops/docs-navigator:ro
