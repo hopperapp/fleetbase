@@ -1217,6 +1217,15 @@ class Currency implements \JsonSerializable
             'decimalSeparator'  => '',
             'symbolPlacement'   => 'after',
         ],
+        'YER' => [
+            'code'              => 'YER',
+            'title'             => 'Yemeni Rial',
+            'symbol'            => '﷼',
+            'precision'         => 2,
+            'thousandSeparator' => ',',
+            'decimalSeparator'  => '.',
+            'symbolPlacement'   => 'before',
+        ],
         'QAR' => [
             'code'              => 'QAR',
             'title'             => 'Qatari Rial',
@@ -1243,15 +1252,6 @@ class Currency implements \JsonSerializable
             'thousandSeparator' => ',',
             'decimalSeparator'  => '.',
             'symbolPlacement'   => 'before',
-        ],
-        'YER' => [
-            'code'              => 'YER',
-            'title'             => 'Yemeni Rial',
-            'symbol'            => '﷼',
-            'precision'         => 2,
-            'thousandSeparator' => ',',
-            'decimalSeparator'  => '.',
-            'symbolPlacement'   => 'after',
         ],
     ];
 
