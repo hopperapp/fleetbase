@@ -9,7 +9,7 @@ services:
       GOOGLE_MAPS_LOCALE: "us"
       TWILIO_SID: "YOUR_TWILIO_SID_HERE"
       TWILIO_TOKEN: "YOUR_TWILIO_TOKEN_HERE"
-      TWILIO_FROM: "YOUR_TWILIO_PHONE_NUMBER_HERE"
+      TWILIO_FROM: "+1XXXXXXXXXX"
   httpd:
     volumes:
       - ./custom/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
