@@ -1,0 +1,218 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hopper Rides API",
+    "description": "API specifications for the custom @hopper/rides extension handling Ride-Hailing functionality natively within Fleetbase.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hopper Development API"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.hopper.test/rides/v1",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "customerToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Customer-Token"
+      },
+      "driverToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Driver-Token"
+      }
+    }
+  },
+  "paths": {
+    "/customer/vehicles": {
+      "get": {
+        "summary": "List Vehicle Categories",
+        "tags": ["Customer - Vehicles"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of available vehicle categories in the store context."
+          }
+        }
+      }
+    },
+    "/customer/estimate": {
+      "post": {
+        "summary": "Estimate Ride Fare",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "distance_meters": { "type": "integer" },
+                  "duration_seconds": { "type": "integer" }
+                },
+                "required": ["distance_meters", "duration_seconds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Fare estimates by category." }
+        }
+      }
+    },
+    "/customer/rides": {
+      "post": {
+        "summary": "Request a Ride",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "pickup_latitude": { "type": "number" },
+                  "pickup_longitude": { "type": "number" },
+                  "dropoff_latitude": { "type": "number" },
+                  "dropoff_longitude": { "type": "number" },
+                  "distance_meters": { "type": "integer" },
+                  "duration_seconds": { "type": "integer" },
+                  "pricing_method": { "type": "string", "enum": ["auto", "fixed", "bidding"] }
+                },
+                "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Ride requested successfully." }
+        }
+      }
+    },
+    "/customer/rides/{id}/bids": {
+      "get": {
+        "summary": "View Active Bids",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "List of active driver bids." }
+        }
+      }
+    },
+    "/customer/rides/{id}/accept-bid": {
+      "post": {
+        "summary": "Accept a Bid",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bid_public_id": { "type": "string" }
+                },
+                "required": ["bid_public_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Bid accepted and Dispatch Native Order Created." }
+        }
+      }
+    },
+    "/driver/rides/available": {
+      "get": {
+        "summary": "Discover Nearby Available Rides",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "driverToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "List of un-bid matching rides." }
+        }
+      }
+    },
+    "/driver/bids/{rideId}": {
+      "post": {
+        "summary": "Submit Bid",
+        "tags": ["Driver - Bids"],
+        "security": [
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "rideId", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": { "type": "integer" },
+                  "estimated_arrival_min": { "type": "integer" }
+                },
+                "required": ["amount"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Bid submitted." }
+        }
+      }
+    },
+    "/driver/rides/{id}/start": {
+      "post": {
+        "summary": "Start Trip",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Trip Status updated to IN_TRANSIT." }
+        }
+      }
+    }
+  }
+}
