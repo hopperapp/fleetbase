@@ -71,6 +71,18 @@ server {
     index index.html;
     try_files $uri $uri/ /fleetops/docs-navigator/index.html;
   }
+
+  # Serve Swagger UI for Rides API as static files
+  location = /rides/docs {
+    absolute_redirect off;
+    return 302 /rides/docs/;
+  }
+
+  location /rides/docs/ {
+    alias /fleetbase/api/public/rides/docs/;
+    index index.html;
+    try_files $uri $uri/ /rides/docs/index.html;
+  }
   location / {
     proxy_set_header Host            $host;
     proxy_pass   http://${NGINX_APPLICATION_HOSTNAME}:8000;
