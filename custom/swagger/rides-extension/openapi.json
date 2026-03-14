@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "https://api.hopper.test/rides/v1",
+      "url": "http://localhost:8000/rides/v1",
       "description": "Local Development Server"
     }
   ],
