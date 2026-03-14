@@ -213,6 +213,224 @@
           "200": { "description": "Trip Status updated to IN_TRANSIT." }
         }
       }
+    },
+    "/admin/vehicle-categories": {
+      "get": {
+        "summary": "List Vehicle Categories",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vehicle categories."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "base_fare": { "type": "integer" },
+                  "per_km_fare": { "type": "integer" },
+                  "per_min_fare": { "type": "integer" },
+                  "min_fare": { "type": "integer" },
+                  "currency": { "type": "string" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                },
+                "required": ["name", "key", "base_fare", "per_km_fare", "per_min_fare", "min_fare"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Vehicle Category created." }
+        }
+      }
+    },
+    "/admin/vehicle-categories/{id}": {
+      "get": {
+        "summary": "Get Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Vehicle Category details." }
+        }
+      },
+      "put": {
+        "summary": "Update Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "base_fare": { "type": "integer" },
+                  "per_km_fare": { "type": "integer" },
+                  "per_min_fare": { "type": "integer" },
+                  "min_fare": { "type": "integer" },
+                  "currency": { "type": "string" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Vehicle Category updated." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Vehicle Category deleted." }
+        }
+      }
+    },
+    "/admin/vehicle-sub-categories": {
+      "get": {
+        "summary": "List Vehicle Sub Categories",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of vehicle sub categories."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "fare_multiplier": { "type": "number", "format": "float" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                },
+                "required": ["vehicle_category_uuid", "name", "key"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Vehicle Sub Category created." }
+        }
+      }
+    },
+    "/admin/vehicle-sub-categories/{id}": {
+      "get": {
+        "summary": "Get Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Vehicle Sub Category details." }
+        }
+      },
+      "put": {
+        "summary": "Update Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "fare_multiplier": { "type": "number", "format": "float" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Vehicle Sub Category updated." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "Vehicle Sub Category deleted." }
+        }
+      }
     }
   }
 }

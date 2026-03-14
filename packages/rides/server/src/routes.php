@@ -87,5 +87,34 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->delete('{rideId}', 'DriverBidController@withdraw');
                 });
             });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Admin API Routes
+        |--------------------------------------------------------------------------
+        |
+        | Admin endpoints for managing categories and system settings.
+        |
+        */
+        Route::prefix('v1/admin')
+            ->middleware('rides.api')
+            ->namespace('v1')
+            ->group(function ($router) {
+                $router->group(['prefix' => 'vehicle-categories'], function () use ($router) {
+                    $router->get('/', 'AdminVehicleCategoryController@index');
+                    $router->post('/', 'AdminVehicleCategoryController@store');
+                    $router->get('{id}', 'AdminVehicleCategoryController@show');
+                    $router->put('{id}', 'AdminVehicleCategoryController@update');
+                    $router->delete('{id}', 'AdminVehicleCategoryController@destroy');
+                });
+                
+                $router->group(['prefix' => 'vehicle-sub-categories'], function () use ($router) {
+                    $router->get('/', 'AdminVehicleSubCategoryController@index');
+                    $router->post('/', 'AdminVehicleSubCategoryController@store');
+                    $router->get('{id}', 'AdminVehicleSubCategoryController@show');
+                    $router->put('{id}', 'AdminVehicleSubCategoryController@update');
+                    $router->delete('{id}', 'AdminVehicleSubCategoryController@destroy');
+                });
+            });
     }
 );
