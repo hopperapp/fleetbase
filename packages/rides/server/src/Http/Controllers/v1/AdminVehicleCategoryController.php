@@ -14,14 +14,13 @@ class AdminVehicleCategoryController extends Controller
     public function index(Request $request)
     {
         $companyUuid = session('company');
-        $storeUuid = session('rides_store');
         
         $query = VehicleCategory::where('company_uuid', $companyUuid)
             ->with('subCategories')
             ->orderBy('sort_order', 'asc');
             
-        if ($storeUuid) {
-            $query->where('store_uuid', $storeUuid);
+        if ($request->has('store_uuid')) {
+            $query->where('store_uuid', $request->input('store_uuid'));
         }
 
         return response()->json($query->get());
@@ -44,17 +43,17 @@ class AdminVehicleCategoryController extends Controller
             'currency'     => 'nullable|string|size:3',
             'sort_order'   => 'nullable|integer',
             'is_active'    => 'nullable|boolean',
+            'store_uuid'   => 'nullable|string',
         ]);
 
         $category = VehicleCategory::create(array_merge(
             $request->only([
                 'name', 'key', 'description', 'icon', 'base_fare', 
                 'per_km_fare', 'per_min_fare', 'min_fare', 'currency', 
-                'sort_order', 'is_active'
+                'sort_order', 'is_active', 'store_uuid'
             ]),
             [
                 'company_uuid' => session('company'),
-                'store_uuid'   => session('rides_store'),
             ]
         ));
 
@@ -99,12 +98,13 @@ class AdminVehicleCategoryController extends Controller
             'currency'     => 'nullable|string|size:3',
             'sort_order'   => 'nullable|integer',
             'is_active'    => 'nullable|boolean',
+            'store_uuid'   => 'nullable|string',
         ]);
 
         $category->update($request->only([
             'name', 'key', 'description', 'icon', 'base_fare', 
             'per_km_fare', 'per_min_fare', 'min_fare', 'currency', 
-            'sort_order', 'is_active'
+            'sort_order', 'is_active', 'store_uuid'
         ]));
 
         return response()->json($category);

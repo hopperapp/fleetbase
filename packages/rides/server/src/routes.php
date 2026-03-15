@@ -97,7 +97,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
         |
         */
         Route::prefix('v1/admin')
-            ->middleware('rides.api')
+            ->middleware('fleetbase.api')
             ->namespace('v1')
             ->group(function ($router) {
                 $router->group(['prefix' => 'vehicle-categories'], function () use ($router) {
