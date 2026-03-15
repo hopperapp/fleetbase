@@ -48,10 +48,13 @@ class AdminVehicleSubCategoryController extends Controller
                                    ->where('company_uuid', session('company'))
                                    ->firstOrFail();
 
-        $subCategory = VehicleSubCategory::create($request->only([
-            'vehicle_category_uuid', 'name', 'key', 'description', 'icon', 
-            'fare_multiplier', 'sort_order', 'is_active'
-        ]));
+        $subCategory = VehicleSubCategory::create(array_merge(
+            $request->only([
+                'vehicle_category_uuid', 'name', 'key', 'description', 'icon', 
+                'fare_multiplier', 'sort_order', 'is_active'
+            ]),
+            ['company_uuid' => session('company')]
+        ));
 
         return response()->json($subCategory, 201);
     }
