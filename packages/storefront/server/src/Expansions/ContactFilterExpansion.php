@@ -28,7 +28,11 @@ class ContactFilterExpansion implements Expansion
             $this->builder->whereHas(
                 'customerOrders',
                 function ($query) use ($storefront) {
-                    $query->where('meta->storefront_id', $storefront);
+                    if (\Illuminate\Support\Str::startsWith($storefront, 'network')) {
+                        $query->where('meta->storefront_network_id', $storefront);
+                    } else {
+                        $query->where('meta->storefront_id', $storefront);
+                    }
                 }
             );
         };

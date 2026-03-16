@@ -126,6 +126,8 @@ class DriverRideController extends Controller
         if (!$orderConfig) {
             $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)->first();
         }
+        // Fetch the network to also link it to the Network Dashboard
+        $network = \Fleetbase\Storefront\Models\Network::where('uuid', $ride->network_uuid)->first();
 
         $order = \Fleetbase\FleetOps\Models\Order::create([
             'company_uuid'          => $ride->company_uuid,
@@ -145,6 +147,8 @@ class DriverRideController extends Controller
                 'ride_public_id'        => $ride->public_id,
                 'storefront'            => $store ? $store->name : null,
                 'storefront_id'         => $store ? $store->public_id : null,
+                'storefront_network'    => $network ? $network->name : null,
+                'storefront_network_id' => $network ? $network->public_id : null,
             ],
         ]);
 
