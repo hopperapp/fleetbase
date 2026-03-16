@@ -212,10 +212,13 @@ class CustomerController extends Controller
         $input['company_uuid'] = session('company');
         $input['phone']        = static::phone($request->input('phone'));
         $input['user_uuid']    = $user->uuid;
-        $input['meta']         = [
-            'storefront_id' => $about->public_id,
-            'origin'        => 'storefront',
-        ];
+        $input['meta']         = ['origin' => 'storefront'];
+        
+        if (isset($about->is_network) && $about->is_network) {
+            $input['meta']['storefront_network_id'] = $about->public_id;
+        } else {
+            $input['meta']['storefront_id'] = $about->public_id;
+        }
 
         // Handle photo as either file id/ or base64 data string
         $photo = $request->input('photo');

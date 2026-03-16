@@ -277,28 +277,54 @@ class CustomerRideController extends Controller
             'dropoff_uuid'       => $ride->dropoff_place_uuid,
         ]);
 
-        $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
-            ->where('key', 'passenger-transport') // Assumes passenger-transport order config exists
-            ->first();
+        // Fetch Store to attach to Storefront View
+        $store = \Fleetbase\Storefront\Models\Store::where('uuid', $ride->store_uuid)->first();
+
+        // 1. Try to get the specific OrderConfig linked to this exact Store
+        $orderConfig = null;
+        if ($store && $store->order_config_uuid) {
+            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('uuid', $store->order_config_uuid)->first();
+        }
+
+        // 2. Fallback to searching the company's configs for keywords
+        if (!$orderConfig) {
+            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
+                ->where(function ($q) {
+                    $q->where('key', 'passenger-transport') // Standard fallback
+                      ->orWhere('name', 'like', '%passenger%')
+                      ->orWhere('name', 'like', '%ride%')
+                      ->orWhere('name', 'like', '%transport%');
+                })
+                ->first();
+        }
+
+        // 3. Absolute fallback to the first custom order config found for this company
+        if (!$orderConfig) {
+            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)->first();
+        }
 
         $order = Order::create([
             'company_uuid'          => $ride->company_uuid,
             'order_config_uuid'     => $orderConfig ? $orderConfig->uuid : null,
             'payload_uuid'          => $payload->uuid,
             'customer_uuid'         => $ride->customer_uuid,
-            'customer_type'         => 'Fleetbase\Models\Contact',
+            'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
+            'facilitator_uuid'      => $store ? $store->uuid : null,
+            'facilitator_type'      => $store ? 'Fleetbase\Storefront\Models\Store' : null,
             'driver_assigned_uuid'  => $bid->driver_uuid,
             'vehicle_assigned_uuid' => $bid->vehicle_uuid,
             'type'                  => 'passenger-transport',
             'status'                => 'created',
             'adhoc'                 => false,
             'meta'                  => [
-                'ride_uuid'        => $ride->uuid,
-                'ride_public_id'   => $ride->public_id,
-                'vehicle_category' => $ride->vehicleCategory?->name,
-                'pricing_method'   => $ride->pricing_method,
-                'final_price'      => $ride->final_price,
-                'payment_method'   => $ride->payment_method,
+                'ride_uuid'             => $ride->uuid,
+                'ride_public_id'        => $ride->public_id,
+                'vehicle_category'      => $ride->vehicleCategory?->name,
+                'pricing_method'        => $ride->pricing_method,
+                'final_price'           => $ride->final_price,
+                'payment_method'        => $ride->payment_method,
+                'storefront'            => $store ? $store->name : null,
+                'storefront_id'         => $store ? $store->public_id : null,
             ],
         ]);
 
