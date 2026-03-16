@@ -97,8 +97,8 @@ class DriverRideController extends Controller
 
         $payload = \Fleetbase\FleetOps\Models\Payload::create([
             'company_uuid'       => $ride->company_uuid,
-            'pickup_place_uuid'  => $ride->pickup_place_uuid,
-            'dropoff_place_uuid' => $ride->dropoff_place_uuid,
+            'pickup_uuid'        => $ride->pickup_place_uuid,
+            'dropoff_uuid'       => $ride->dropoff_place_uuid,
         ]);
 
         $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
@@ -110,7 +110,7 @@ class DriverRideController extends Controller
             'order_config_uuid'     => $orderConfig ? $orderConfig->uuid : null,
             'payload_uuid'          => $payload->uuid,
             'customer_uuid'         => $ride->customer_uuid,
-            'customer_type'         => 'fleet-ops:contact',
+            'customer_type'         => 'Fleetbase\Models\Contact',
             'driver_assigned_uuid'  => $driverUuid,
             'vehicle_assigned_uuid' => $vehicleUuid,
             'type'                  => 'passenger-transport',
