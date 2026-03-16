@@ -40,10 +40,21 @@ class BroadcastRideToDrivers implements ShouldQueue
             return;
         }
 
-        // Find online drivers within radius for this company
+        // Find online drivers within radius for this company, STRICTLY matching vehicle category/sub-category
         $drivers = Driver::where('company_uuid', $ride->company_uuid)
             ->where('online', true)
             ->whereNotNull('location')
+            ->whereHas('vehicle', function ($q) use ($ride) {
+                // If the customer requested a specific sub-category (e.g. motorcycle_fur via meta)
+                $requestedSubCategory = $ride->meta['vehicle_sub_category_uuid'] ?? null;
+                
+                if ($requestedSubCategory) {
+                    $q->where('meta->vehicle_sub_category_uuid', $requestedSubCategory);
+                } else {
+                    // Otherwise, just match the base vehicle category
+                    $q->where('meta->vehicle_category_uuid', $ride->vehicle_category_uuid);
+                }
+            })
             ->get();
 
         // Filter by distance using PHP (since driver location is a POINT spatial type)
