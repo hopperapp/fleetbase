@@ -162,6 +162,7 @@
         "summary": "Discover Nearby Available Rides",
         "tags": ["Driver - Rides"],
         "security": [
+          { "bearerAuth": [] },
           { "driverToken": [] }
         ],
         "responses": {
@@ -174,6 +175,7 @@
         "summary": "Submit Bid",
         "tags": ["Driver - Bids"],
         "security": [
+          { "bearerAuth": [] },
           { "driverToken": [] }
         ],
         "parameters": [
@@ -204,6 +206,7 @@
         "summary": "Start Trip",
         "tags": ["Driver - Rides"],
         "security": [
+          { "bearerAuth": [] },
           { "driverToken": [] }
         ],
         "parameters": [
