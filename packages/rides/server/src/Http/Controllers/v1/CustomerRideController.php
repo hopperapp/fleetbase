@@ -56,14 +56,14 @@ class CustomerRideController extends Controller
         $pickupPlace = Place::create([
             'company_uuid' => $companyUuid,
             'name'         => 'Pickup Location',
-            'location'     => Place::toPoint($request->input('pickup_latitude'), $request->input('pickup_longitude')),
+            'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('pickup_latitude'), $request->input('pickup_longitude')),
             'address'      => $request->input('pickup_address', 'Unknown Address'),
         ]);
 
         $dropoffPlace = Place::create([
             'company_uuid' => $companyUuid,
             'name'         => 'Dropoff Location',
-            'location'     => Place::toPoint($request->input('dropoff_latitude'), $request->input('dropoff_longitude')),
+            'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('dropoff_latitude'), $request->input('dropoff_longitude')),
             'address'      => $request->input('dropoff_address', 'Unknown Address'),
         ]);
 
