@@ -592,6 +592,39 @@
           }
         }
       }
+    },
+    "/admin/drivers/leaderboard": {
+      "get": {
+        "summary": "Driver Leaderboard",
+        "description": "Returns a paginated list of all active drivers sorted by their total earnings and completed ride counts.",
+        "tags": ["Admin - Drivers"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["total_earnings", "completed_rides"], "default": "total_earnings" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": { "description": "Leaderboard data for all active drivers." }
+        }
+      }
+    },
+    "/admin/drivers/{id}/stats": {
+      "get": {
+        "summary": "Detailed Driver Stats",
+        "description": "Fetch real-time earnings, rating, and ride counts for a specific driver.",
+        "tags": ["Admin - Drivers"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID of the driver." }
+        ],
+        "responses": {
+          "200": { "description": "Aggregated driver statistics." }
+        }
+      }
     }
   }
 }

@@ -4,6 +4,7 @@ namespace Hopper\Rides\Http\Controllers\v1;
 
 use Fleetbase\Http\Controllers\Controller;
 use Hopper\Rides\Models\RideReview;
+use Hopper\Rides\Http\Resources\v1\ReviewResource;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
@@ -24,17 +25,10 @@ class ProfileController extends Controller
 
         $reviews = RideReview::where('reviewee_uuid', $model->uuid)
             ->where('reviewee_type', $type)
-            ->with(['ride'])
+            ->with(['reviewer']) // Eager load the reviewer for name/photo
             ->latest()
             ->paginate($request->input('limit', 15));
 
-        return response()->json([
-            'reviews' => $reviews->items(),
-            'meta'    => [
-                'current_page' => $reviews->currentPage(),
-                'last_page'    => $reviews->lastPage(),
-                'total'        => $reviews->total(),
-            ]
-        ]);
+        return ReviewResource::collection($reviews);
     }
 }

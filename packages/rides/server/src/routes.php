@@ -110,6 +110,11 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->put('{id}', 'AdminVehicleCategoryController@update');
                     $router->delete('{id}', 'AdminVehicleCategoryController@destroy');
                 });
+
+                $router->group(['prefix' => 'drivers'], function () use ($router) {
+                    $router->get('leaderboard', 'AdminDriverController@leaderboard');
+                    $router->get('{id}/stats', 'AdminDriverController@stats');
+                });
                 
                 $router->group(['prefix' => 'vehicle-sub-categories'], function () use ($router) {
                     $router->get('/', 'AdminVehicleSubCategoryController@index');
