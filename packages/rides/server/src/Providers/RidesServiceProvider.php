@@ -5,6 +5,7 @@ namespace Hopper\Rides\Providers;
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\Storefront\Providers\StorefrontServiceProvider;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 if (!class_exists(CoreServiceProvider::class)) {
     throw new \Exception('Rides extension cannot be loaded without `fleetbase/core-api` installed!');
@@ -77,5 +78,12 @@ class RidesServiceProvider extends CoreServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
         $this->mergeConfigFrom(__DIR__ . '/../../../config/rides.php', 'rides');
+
+        // Register Morph Map for polymorphic relationships
+        Relation::morphMap([
+            'customer' => \Fleetbase\FleetOps\Models\Contact::class,
+            'driver'   => \Fleetbase\FleetOps\Models\Driver::class,
+            'ride'     => \Hopper\Rides\Models\Ride::class,
+        ]);
     }
 }
