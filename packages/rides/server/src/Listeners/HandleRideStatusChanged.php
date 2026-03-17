@@ -28,7 +28,9 @@ class HandleRideStatusChanged
             ];
 
             $orderStatus = $statusMap[$ride->status] ?? null;
-            if ($orderStatus) {
+            
+            // Only update if the order status is actually different to avoid double-logging activities
+            if ($orderStatus && $ride->order->status !== $orderStatus) {
                 $ride->order->updateStatus($orderStatus);
             }
         }

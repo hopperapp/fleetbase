@@ -254,8 +254,16 @@ class DriverRideController extends Controller
         // Sync with Core FleetOps Order
         if ($ride->order) {
             // FleetOps updateStatus handles the activity insertion and core status sync
-            $ride->order->updateStatus($statusCode);
+            // We check if the status is already updated (to prevent double-logging from the listener)
+            if ($ride->order->status !== $statusCode) {
+                $ride->order->updateStatus($statusCode);
+            }
             
+            // Sync financials to the core order so dashboards show correct revenue
+            if ($statusCode === 'completed' && $ride->final_price) {
+                $ride->order->update(['amount' => $ride->final_price]);
+            }
+
             // Explicit flag fallbacks (safety for external sync)
             if ($statusCode === 'started' && !$ride->order->started) {
                 $ride->order->update(['started' => true, 'started_at' => now()]);
