@@ -6,6 +6,7 @@ use Fleetbase\Http\Controllers\Controller;
 use Hopper\Rides\Models\Ride;
 use Hopper\Rides\Events\RideStatusChanged;
 use Hopper\Rides\Events\RideCanceled;
+use Hopper\Rides\Http\Resources\v1\RideResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -70,7 +71,9 @@ class DriverRideController extends Controller
             return response()->error('Unauthorized.', 403);
         }
 
-        return response()->json(['ride' => $ride]);
+        return response()->json([
+            'ride' => new RideResource($ride)
+        ]);
     }
 
     /**
@@ -263,7 +266,7 @@ class DriverRideController extends Controller
 
         return response()->json([
             'message' => 'Status updated successfully.',
-            'ride'    => $ride->fresh(['order'])
+            'ride'    => new RideResource($ride->fresh(['order.orderConfig', 'customer', 'driver']))
         ]);
     }
 
