@@ -47,28 +47,28 @@ class AdminDriverController extends Controller
      */
     public function leaderboard(Request $request)
     {
-        $drivers = Driver::where('company_uuid', session('company'))
-            ->where('status', 'active')
-            ->with(['user', 'vehicle'])
-            ->withCount(['jobs as completed_rides_count' => function($query) {
-                // We use the jobs relationship (Order) but filter by ride completion logic
-                // Or better, we count directly from the rides table via subquery
-            }])
-            ->get();
-            
-        // Using raw queries for high performance dashboard lists
+        $limit = $request->input('limit', 15);
+        $sort = $request->input('sort', 'total_earnings');
+        
+        // Allowed sort columns
+        if (!in_array($sort, ['total_earnings', 'completed_rides'])) {
+            $sort = 'total_earnings';
+        }
+
         $leaderboard = Driver::query()
             ->select('drivers.*')
-            ->where('drivers.company_uuid', session('company'))
-            ->leftJoin('rides', function($join) {
-                $join->on('drivers.uuid', '=', 'rides.driver_uuid')
-                     ->where('rides.status', '=', Ride::STATUS_COMPLETED);
-            })
-            ->groupBy('drivers.uuid')
-            ->selectRaw('COUNT(rides.uuid) as completed_rides')
-            ->selectRaw('SUM(rides.final_price) as total_earnings')
-            ->orderBy($request->input('sort', 'total_earnings'), 'desc')
-            ->paginate($request->input('limit', 15));
+            ->where('company_uuid', session('company'))
+            ->with(['user', 'vehicle'])
+            ->addSelect([
+                'completed_rides' => Ride::selectRaw('count(*)')
+                    ->whereColumn('driver_uuid', 'drivers.uuid')
+                    ->where('status', Ride::STATUS_COMPLETED),
+                'total_earnings' => Ride::selectRaw('coalesce(sum(final_price), 0)')
+                    ->whereColumn('driver_uuid', 'drivers.uuid')
+                    ->where('status', Ride::STATUS_COMPLETED),
+            ])
+            ->orderBy($sort, 'desc')
+            ->paginate($limit);
 
         return response()->json([
             'leaderboard' => $leaderboard->items(),
