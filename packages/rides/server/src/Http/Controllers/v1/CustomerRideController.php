@@ -312,8 +312,6 @@ class CustomerRideController extends Controller
             'payload_uuid'          => $payload->uuid,
             'customer_uuid'         => $ride->customer_uuid,
             'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
-            'facilitator_uuid'      => $store ? $store->uuid : null,
-            'facilitator_type'      => $store ? 'Fleetbase\Storefront\Models\Store' : null,
             'driver_assigned_uuid'  => $bid->driver_uuid,
             'vehicle_assigned_uuid' => $bid->vehicle_uuid,
             'type'                  => 'passenger-transport',
