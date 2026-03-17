@@ -3,6 +3,8 @@
 namespace Hopper\Rides\Http\Resources\v1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Hopper\Rides\Http\Resources\v1\CustomerResource;
+use Hopper\Rides\Http\Resources\v1\DriverResource;
 
 class RideResource extends JsonResource
 {
@@ -17,14 +19,8 @@ class RideResource extends JsonResource
         return [
             'public_id' => $this->public_id,
             'status'    => $this->status,
-            'customer'  => [
-                'name'  => $this->customer_name,
-                'phone' => $this->customer?->phone,
-            ],
-            'driver'    => [
-                'name'  => $this->driver_name,
-                'phone' => $this->driver?->phone,
-            ],
+            'customer'  => new CustomerResource($this->customer),
+            'driver'    => new DriverResource($this->driver),
             'order'     => [
                 'status'       => $this->order?->status,
                 'order_config' => [

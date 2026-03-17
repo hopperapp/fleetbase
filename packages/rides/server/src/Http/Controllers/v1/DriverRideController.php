@@ -43,7 +43,7 @@ class DriverRideController extends Controller
                 $q->where('driver_uuid', $driverUuid);
             })
             ->nearPickup($driver->location->getLat(), $driver->location->getLng(), $radiusMeters)
-            ->with(['vehicleCategory', 'pickupPlace', 'dropoffPlace']);
+            ->with(['vehicleCategory', 'pickupPlace', 'dropoffPlace', 'customer']);
 
         // Limit by driver's vehicle category if possible
         // if ($driver->vehicle && isset($driver->vehicle->meta['vehicle_category_uuid'])) {
@@ -52,7 +52,7 @@ class DriverRideController extends Controller
 
         $rides = $query->latest()->take(50)->get();
 
-        return response()->json(['rides' => $rides]);
+        return RideResource::collection($rides);
     }
 
     /**

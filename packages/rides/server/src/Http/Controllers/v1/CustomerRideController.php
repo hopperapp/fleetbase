@@ -12,6 +12,7 @@ use Hopper\Rides\Events\RideBidAccepted;
 use Hopper\Rides\Models\Ride;
 use Hopper\Rides\Models\RideBid;
 use Hopper\Rides\Models\RideReview;
+use Hopper\Rides\Http\Resources\v1\RideBidResource;
 use Hopper\Rides\Models\VehicleCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -227,10 +228,10 @@ class CustomerRideController extends Controller
         $bids = RideBid::where('ride_uuid', $ride->uuid)
             ->where('status', RideBid::STATUS_PENDING)
             ->with(['driver.user', 'vehicle'])
-            ->orderBy('amount', 'asc') // sort by cheapest first
+            ->orderBy('amount', 'asc')
             ->get();
 
-        return response()->json(['bids' => $bids]);
+        return RideBidResource::collection($bids);
     }
 
     /**

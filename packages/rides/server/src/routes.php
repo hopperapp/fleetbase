@@ -119,5 +119,17 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->delete('{id}', 'AdminVehicleSubCategoryController@destroy');
                 });
             });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Profile & Review Routes
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('v1')
+            ->middleware('rides.api')
+            ->namespace('v1')
+            ->group(function ($router) {
+                $router->get('profiles/{type}/{id}/reviews', 'ProfileController@reviews');
+            });
     }
 );

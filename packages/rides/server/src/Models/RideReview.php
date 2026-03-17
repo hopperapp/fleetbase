@@ -120,6 +120,15 @@ class RideReview extends Model
             $meta = $model->meta ?? [];
             $meta['rating'] = $avg;
             $meta['reviews_count'] = $count;
+
+            // If the reviewee is a driver, also sync their total completed rides
+            if ($revieweeType === 'driver') {
+                $completedRidesCount = \Hopper\Rides\Models\Ride::where('driver_uuid', $revieweeUuid)
+                    ->where('status', \Hopper\Rides\Models\Ride::STATUS_COMPLETED)
+                    ->count();
+                $meta['completed_rides_count'] = $completedRidesCount;
+            }
+
             $model->update(['meta' => $meta]);
         }
     }

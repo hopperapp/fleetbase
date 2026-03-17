@@ -554,6 +554,44 @@
           "204": { "description": "Vehicle Sub Category deleted." }
         }
       }
+    },
+    "/profiles/{type}/{id}/reviews": {
+      "get": {
+        "summary": "Get Profile Review History",
+        "description": "Fetch a paginated list of reviews for a specific driver or customer profile.",
+        "tags": ["General - Profiles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "type", "required": true, "schema": { "type": "string", "enum": ["driver", "customer"] } },
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID of the driver or customer contact." },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of reviews.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": { "type": "array", "items": { "type": "object" } },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "current_page": { "type": "integer" },
+                        "last_page": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }
