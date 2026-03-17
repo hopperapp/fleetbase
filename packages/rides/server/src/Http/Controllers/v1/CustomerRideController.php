@@ -40,9 +40,10 @@ class CustomerRideController extends Controller
             'meta'                  => 'nullable|array',
         ]);
 
-        $companyUuid = session('company');
-        $storeUuid = session('rides_store');
+        $companyUuid  = session('company');
         $customerUuid = session('customer');
+        $storeUuid    = $request->input('store_uuid', session('rides_store'));
+        $networkUuid  = $request->input('network_uuid', session('rides_network'));
 
         if (!$companyUuid || !$customerUuid) {
             return response()->error('Authentication failed: Missing company or customer context.', 401);
@@ -82,7 +83,7 @@ class CustomerRideController extends Controller
         $ride = Ride::create([
             'company_uuid'           => $companyUuid,
             'store_uuid'             => $storeUuid,
-            'network_uuid'           => session('rides_network'),
+            'network_uuid'           => $networkUuid,
             'customer_uuid'          => $customerUuid,
             'vehicle_category_uuid'  => $request->input('vehicle_category_uuid'),
             'pricing_method'         => $pricingMethod,
