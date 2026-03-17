@@ -218,7 +218,7 @@ class DriverRideController extends Controller
      */
     public function arrived(Request $request, string $id)
     {
-        return $this->updateTripStatus($id, Ride::STATUS_ARRIVED_AT_PICKUP);
+        return $this->updateTripStatus($id, Ride::STATUS_ARRIVED_AT_PICKUP, 'arrived');
     }
 
     /**
@@ -237,6 +237,10 @@ class DriverRideController extends Controller
             'status'     => Ride::STATUS_IN_TRANSIT,
             'started_at' => now(),
         ]);
+
+        if ($ride->order) {
+            $ride->order->updateStatus('started');
+        }
 
         event(new RideStatusChanged($ride, $previous));
 
@@ -260,6 +264,10 @@ class DriverRideController extends Controller
             'completed_at' => now(),
         ]);
 
+        if ($ride->order) {
+            $ride->order->updateStatus('completed');
+        }
+
         event(new RideStatusChanged($ride, $previous));
 
         return response()->json(['message' => 'Trip completed.', 'ride' => $ride]);
@@ -268,7 +276,7 @@ class DriverRideController extends Controller
     /**
      * Helper to update trip status.
      */
-    private function updateTripStatus(string $id, string $newStatus)
+    private function updateTripStatus(string $id, string $newStatus, ?string $orderStatusCode = null)
     {
         $ride = Ride::where('public_id', $id)->firstOrFail();
 
@@ -282,6 +290,11 @@ class DriverRideController extends Controller
         }
 
         $ride->update(['status' => $newStatus]);
+        
+        if ($orderStatusCode && $ride->order) {
+            $ride->order->updateStatus($orderStatusCode);
+        }
+
         event(new RideStatusChanged($ride, $previous));
 
         return response()->json(['message' => 'Status updated.', 'ride' => $ride]);
