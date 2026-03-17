@@ -55,13 +55,20 @@ class DriverRideController extends Controller
     }
 
     /**
-     * Show ride details.
+     * Show ride details for the driver.
      */
     public function show(string $id)
     {
         $ride = Ride::where('public_id', $id)
-            ->with(['customer', 'vehicleCategory', 'pickupPlace', 'dropoffPlace'])
+            ->with(['customer', 'vehicleCategory', 'pickupPlace', 'dropoffPlace', 'order'])
             ->firstOrFail();
+
+        // Security: Ensure driver is authorized to see this specific ride
+        // (Allows assigned driver OR any driver if ride is still seeking bids)
+        $driverUuid = session('driver');
+        if ($ride->driver_uuid && $ride->driver_uuid !== $driverUuid) {
+            return response()->error('Unauthorized.', 403);
+        }
 
         return response()->json(['ride' => $ride]);
     }

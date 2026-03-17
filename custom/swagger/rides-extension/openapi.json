@@ -170,6 +170,36 @@
         }
       }
     },
+    "/driver/rides/{id}": {
+      "get": {
+        "summary": "Get Ride Details",
+        "description": "Fetch current state of an active ride, including the linked FleetOps Order and its dynamic status flow.",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "The ride resource with expanded relationships.",
+            "content": {
+              "application/json": {
+                "schema": {
+                   "type": "object",
+                   "properties": {
+                     "ride": { "$ref": "#/components/schemas/Ride" }
+                   }
+                }
+              }
+            }
+          },
+          "403": { "description": "Unauthorized - Driver is not assigned to this ride." }
+        }
+      }
+    },
     "/driver/bids/{rideId}": {
       "post": {
         "summary": "Submit Bid",
