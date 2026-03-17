@@ -316,12 +316,12 @@ class DriverRideController extends Controller
     }
 
     /**
-     * Submit a review for the customer.
+     * Driver rates the passenger.
      */
-    public function submitReview(Request $request, string $id)
+    public function rate(Request $request, string $id)
     {
         $request->validate([
-            'rating'  => 'required|integer|min:1|max:5',
+            'rating'  => 'nullable|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
             'tags'    => 'nullable|array',
         ]);
@@ -333,7 +333,7 @@ class DriverRideController extends Controller
         }
 
         if ($ride->status !== Ride::STATUS_COMPLETED) {
-            return response()->error('Cannot review until trip is completed.', 422);
+            return response()->error('Cannot rate until trip is completed.', 422);
         }
 
         \Hopper\Rides\Models\RideReview::create([
@@ -348,6 +348,9 @@ class DriverRideController extends Controller
             'tags'          => $request->input('tags', []),
         ]);
 
-        return response()->json(['message' => 'Review submitted successfully.']);
+        // Sync stats to customer meta
+        \Hopper\Rides\Models\RideReview::syncStats($ride->customer_uuid, 'customer');
+
+        return response()->json(['message' => 'Passenger rated successfully.']);
     }
 }

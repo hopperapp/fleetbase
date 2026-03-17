@@ -103,4 +103,24 @@ class RideReview extends Model
             ->where('reviewee_type', $entityType)
             ->count();
     }
+
+    /**
+     * Sync the calculated stats to the reviewee's meta column.
+     */
+    public static function syncStats(string $revieweeUuid, string $revieweeType): void
+    {
+        $avg = static::averageRatingFor($revieweeUuid, $revieweeType);
+        $count = static::reviewCountFor($revieweeUuid, $revieweeType);
+
+        $model = ($revieweeType === 'driver')
+            ? \Fleetbase\FleetOps\Models\Driver::where('uuid', $revieweeUuid)->first()
+            : \Fleetbase\FleetOps\Models\Contact::where('uuid', $revieweeUuid)->first();
+
+        if ($model) {
+            $meta = $model->meta ?? [];
+            $meta['rating'] = $avg;
+            $meta['reviews_count'] = $count;
+            $model->update(['meta' => $meta]);
+        }
+    }
 }

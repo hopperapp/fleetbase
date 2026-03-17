@@ -157,6 +157,36 @@
         }
       }
     },
+    "/customer/rides/{id}/rate": {
+      "post": {
+        "summary": "Rate Driver",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Driver rated successfully." }
+        }
+      }
+    },
     "/driver/rides/available": {
       "get": {
         "summary": "Discover Nearby Available Rides",
@@ -258,6 +288,36 @@
         },
         "responses": {
           "200": { "description": "Status updated and synced with FleetOps Order." }
+        }
+      }
+    },
+    "/driver/rides/{id}/rate": {
+      "post": {
+        "summary": "Rate Passenger",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Passenger rated successfully." }
         }
       }
     },

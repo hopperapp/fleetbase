@@ -11,6 +11,7 @@ use Hopper\Rides\Events\RideCanceled;
 use Hopper\Rides\Events\RideBidAccepted;
 use Hopper\Rides\Models\Ride;
 use Hopper\Rides\Models\RideBid;
+use Hopper\Rides\Models\RideReview;
 use Hopper\Rides\Models\VehicleCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -344,5 +345,44 @@ class CustomerRideController extends Controller
             'message' => 'Bid accepted successfully.',
             'ride'    => $ride->load(['driver.user', 'vehicle']),
         ]);
+    }
+
+    /**
+     * Customer rates the driver.
+     */
+    public function rate(Request $request, string $id)
+    {
+        $request->validate([
+            'rating'  => 'nullable|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+            'tags'    => 'nullable|array',
+        ]);
+
+        $ride = Ride::where('public_id', $id)->firstOrFail();
+
+        if ($ride->customer_uuid !== session('customer')) {
+            return response()->error('Unauthorized.', 403);
+        }
+
+        if ($ride->status !== Ride::STATUS_COMPLETED) {
+            return response()->error('Cannot rate until trip is completed.', 422);
+        }
+
+        RideReview::create([
+            'company_uuid'  => $ride->company_uuid,
+            'ride_uuid'     => $ride->uuid,
+            'reviewer_uuid' => session('customer'),
+            'reviewer_type' => 'customer',
+            'reviewee_uuid' => $ride->driver_uuid,
+            'reviewee_type' => 'driver',
+            'rating'        => $request->input('rating'),
+            'comment'       => $request->input('comment'),
+            'tags'          => $request->input('tags', []),
+        ]);
+
+        // Sync stats to driver meta
+        RideReview::syncStats($ride->driver_uuid, 'driver');
+
+        return response()->json(['message' => 'Driver rated successfully.']);
     }
 }

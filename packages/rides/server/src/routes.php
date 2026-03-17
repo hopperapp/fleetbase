@@ -45,7 +45,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->post('{id}/cancel', 'CustomerRideController@cancel');
                     $router->get('{id}/bids', 'CustomerRideController@bids');
                     $router->post('{id}/accept-bid', 'CustomerRideController@acceptBid');
-                    $router->post('{id}/review', 'CustomerRideController@submitReview');
+                    $router->post('{id}/rate', 'CustomerRideController@rate');
                 });
             });
 
@@ -79,8 +79,8 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->post('{id}/start', 'DriverRideController@start');
                     $router->post('{id}/complete', 'DriverRideController@complete');
 
-                    // Review
-                    $router->post('{id}/review', 'DriverRideController@submitReview');
+                    // Rating/Review
+                    $router->post('{id}/rate', 'DriverRideController@rate');
                 });
 
                 // Bidding
