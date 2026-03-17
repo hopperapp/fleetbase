@@ -70,7 +70,10 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->post('{id}/decline', 'DriverRideController@decline');
                     $router->post('{id}/cancel', 'DriverRideController@cancel');
 
-                    // Trip status flow
+                    // Trip status flow (Dynamic)
+                    $router->post('{id}/status', 'DriverRideController@updateStatus');
+
+                    // Individual status endpoints (Deprecated in favor of /status)
                     $router->post('{id}/en-route', 'DriverRideController@enRoute');
                     $router->post('{id}/arrived', 'DriverRideController@arrived');
                     $router->post('{id}/start', 'DriverRideController@start');

@@ -206,98 +206,95 @@ class DriverRideController extends Controller
     }
 
     /**
-     * Trip Status Update: Driver is en route to pickup.
+     * Dynamic Trip Status Update: Accepts any status code and syncs with FleetOps.
+     */
+    public function updateStatus(Request $request, string $id)
+    {
+        $ride = Ride::where('public_id', $id)->firstOrFail();
+        
+        if ($ride->driver_uuid !== session('driver')) {
+            return response()->error('Unauthorized.', 403);
+        }
+
+        $statusCode = $request->input('status', $request->input('status_code')); 
+        if (!$statusCode) {
+            return response()->error('Status code is required.', 422);
+        }
+
+        $previous = $ride->status;
+        $rideUpdate = ['status' => $statusCode];
+
+        // Custom model-level logic for Ride-Hailing Stage Mapping
+        if ($statusCode === 'started' || $statusCode === Ride::STATUS_IN_TRANSIT) {
+             $rideUpdate['status'] = Ride::STATUS_IN_TRANSIT;
+             $rideUpdate['started_at'] = now();
+        }
+        
+        if ($statusCode === 'completed' || $statusCode === Ride::STATUS_COMPLETED) {
+             $rideUpdate['status'] = Ride::STATUS_COMPLETED;
+             $rideUpdate['completed_at'] = now();
+        }
+
+        if ($statusCode === 'arrived' || $statusCode === Ride::STATUS_ARRIVED_AT_PICKUP) {
+             $rideUpdate['status'] = Ride::STATUS_ARRIVED_AT_PICKUP;
+        }
+
+        $ride->update($rideUpdate);
+
+        // Sync with Core FleetOps Order
+        if ($ride->order) {
+            // FleetOps updateStatus handles the activity insertion and core status sync
+            $ride->order->updateStatus($statusCode);
+            
+            // Explicit flag fallbacks (safety for external sync)
+            if ($statusCode === 'started' && !$ride->order->started) {
+                $ride->order->update(['started' => true, 'started_at' => now()]);
+            }
+        }
+
+        event(new RideStatusChanged($ride, $previous));
+
+        return response()->json([
+            'message' => 'Status updated successfully.',
+            'ride'    => $ride->fresh(['order'])
+        ]);
+    }
+
+    /**
+     * Trip Status Update: Driver is en route (Legacy Wrapper).
      */
     public function enRoute(Request $request, string $id)
     {
-        return $this->updateTripStatus($id, Ride::STATUS_DRIVER_EN_ROUTE);
+        $request->merge(['status' => Ride::STATUS_DRIVER_EN_ROUTE]);
+        return $this->updateStatus($request, $id);
     }
 
     /**
-     * Trip Status Update: Driver has arrived at pickup.
+     * Trip Status Update: Driver has arrived at pickup (Legacy Wrapper).
      */
     public function arrived(Request $request, string $id)
     {
-        return $this->updateTripStatus($id, Ride::STATUS_ARRIVED_AT_PICKUP, 'arrived');
+        // Custom: Rides uses 'arrived_at_pickup' for Ride, FleetOps uses 'arrived' for Order
+        $request->merge(['status' => 'arrived']);
+        return $this->updateStatus($request, $id);
     }
 
     /**
-     * Trip Status Update: Passenger onboard, trip started.
+     * Trip Status Update: Passenger onboard, trip started (Legacy Wrapper).
      */
     public function start(Request $request, string $id)
     {
-        $ride = Ride::where('public_id', $id)->firstOrFail();
-        
-        if ($ride->driver_uuid !== session('driver')) {
-            return response()->error('Unauthorized.', 403);
-        }
-
-        $previous = $ride->status;
-        $ride->update([
-            'status'     => Ride::STATUS_IN_TRANSIT,
-            'started_at' => now(),
-        ]);
-
-        if ($ride->order) {
-            $ride->order->updateStatus('started');
-        }
-
-        event(new RideStatusChanged($ride, $previous));
-
-        return response()->json(['message' => 'Trip started.', 'ride' => $ride]);
+        $request->merge(['status' => 'started']);
+        return $this->updateStatus($request, $id);
     }
 
     /**
-     * Trip Status Update: Arrived at destination.
+     * Trip Status Update: Arrived at destination (Legacy Wrapper).
      */
     public function complete(Request $request, string $id)
     {
-        $ride = Ride::where('public_id', $id)->firstOrFail();
-        
-        if ($ride->driver_uuid !== session('driver')) {
-            return response()->error('Unauthorized.', 403);
-        }
-
-        $previous = $ride->status;
-        $ride->update([
-            'status'       => Ride::STATUS_COMPLETED,
-            'completed_at' => now(),
-        ]);
-
-        if ($ride->order) {
-            $ride->order->updateStatus('completed');
-        }
-
-        event(new RideStatusChanged($ride, $previous));
-
-        return response()->json(['message' => 'Trip completed.', 'ride' => $ride]);
-    }
-
-    /**
-     * Helper to update trip status.
-     */
-    private function updateTripStatus(string $id, string $newStatus, ?string $orderStatusCode = null)
-    {
-        $ride = Ride::where('public_id', $id)->firstOrFail();
-
-        if ($ride->driver_uuid !== session('driver')) {
-            return response()->error('Unauthorized.', 403);
-        }
-
-        $previous = $ride->status;
-        if ($previous === $newStatus) {
-            return response()->json(['ride' => $ride]);
-        }
-
-        $ride->update(['status' => $newStatus]);
-        
-        if ($orderStatusCode && $ride->order) {
-            $ride->order->updateStatus($orderStatusCode);
-        }
-
-        event(new RideStatusChanged($ride, $previous));
-
-        return response()->json(['message' => 'Status updated.', 'ride' => $ride]);
+        $request->merge(['status' => 'completed']);
+        return $this->updateStatus($request, $id);
     }
 
     /**

@@ -201,9 +201,39 @@
         }
       }
     },
+    "/driver/rides/{id}/status": {
+      "post": {
+        "summary": "Update Ride Status (Dynamic)",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "example": "arrived", "description": "Status code (e.g., arrived, started, completed)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status updated and synced with FleetOps Order." }
+        }
+      }
+    },
     "/driver/rides/{id}/start": {
       "post": {
-        "summary": "Start Trip",
+        "summary": "Start Trip (Legacy)",
         "tags": ["Driver - Rides"],
         "security": [
           { "bearerAuth": [] },
