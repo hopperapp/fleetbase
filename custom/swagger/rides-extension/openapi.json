@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Hopper Rides API",
-    "description": "API specifications for the custom @hopper/rides extension handling Ride-Hailing functionality natively within Fleetbase.",
+    "description": "مواصفات واجهة برمجة التطبيقات (API) لإضافة @hopper/rides المخصصة التي تتعامل مع وظائف حجز الرحلات بشكل طبيعي داخل Fleetbase.",
     "version": "1.0.0",
     "contact": {
       "name": "Hopper Development API"
@@ -11,7 +11,7 @@
   "servers": [
     {
       "url": "http://localhost:8000/rides/v1",
-      "description": "Local Development Server"
+      "description": "خادم التطوير المحلي"
     }
   ],
   "components": {
@@ -44,7 +44,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List of available vehicle categories in the store context."
+            "description": "قائمة بفئات المركبات المتاحة في سياق المتجر."
           }
         }
       }
@@ -77,7 +77,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Fare estimates by category." }
+          "200": { "description": "تقديرات الأجر حسب الفئة." }
         }
       }
     },
@@ -106,19 +106,19 @@
                   "pricing_method": { 
                     "type": "string", 
                     "enum": ["auto", "bidding"],
-                    "description": "'auto' uses the internal fare calculator based on distance/duration. 'bidding' allows the customer to propose a price (offered_fare) which drivers can then outbid or accept."
+                    "description": "'auto' يستخدم حاسبة الأجرة الداخلية بناءً على المسافة والمدة. 'bidding' يسمح للعميل باقتراح سعر (offered_fare) يمكن للسائقين المزايدة عليه أو قبوله."
                   },
                   "offered_fare": { 
                     "type": "number",
-                    "description": "Required if pricing_method is 'bidding'. The amount (in minor units) the customer is offering to pay for the ride."
+                    "description": "مطلوب إذا كان pricing_method هو 'bidding'. المبلغ (بالوحدات الصغرى) الذي يقترحه العميل لدفعه مقابل الرحلة."
                   },
                   "store_uuid": {
                     "type": "string",
-                    "description": "The unique identifier of the Storefront this ride belongs to. Used for multi-tenant and branch-specific context."
+                    "description": "المعرف الفريد لـ Storefront الذي تنتمي إليه هذه الرحلة. يستخدم لسياق تعدد المستأجرين والفروع المحددة."
                   },
                   "vehicle_sub_category_uuid": {
                     "type": "string",
-                    "description": "Optional. The UUID of a specific vehicle sub-category (e.g., 'Motorcycle with Fur') to tailor the request."
+                    "description": "اختياري. الـ UUID لفئة فرعية محددة للمركبة (مثل 'دراجة نارية بفرو') لتخصيص الطلب."
                   }
                 },
                 "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
@@ -127,7 +127,7 @@
           }
         },
         "responses": {
-          "201": { "description": "Ride requested successfully." }
+          "201": { "description": "تم طلب الرحلة بنجاح." }
         }
       }
     },
@@ -143,7 +143,7 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "200": { "description": "List of active driver bids." }
+          "200": { "description": "قائمة عروض السائقين النشطة." }
         }
       }
     },
@@ -173,7 +173,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Bid accepted and Dispatch Native Order Created." }
+          "200": { "description": "تم قبول العرض وتم إنشاء طلب إرسال محلي." }
         }
       }
     },
@@ -203,7 +203,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Driver rated successfully." }
+          "200": { "description": "تم تقييم السائق بنجاح." }
         }
       }
     },
@@ -216,14 +216,14 @@
           { "driverToken": [] }
         ],
         "responses": {
-          "200": { "description": "List of un-bid matching rides." }
+          "200": { "description": "قائمة بالرحلات المطابقة التي لم يتم المزايدة عليها بعد." }
         }
       }
     },
     "/driver/rides/{id}": {
       "get": {
         "summary": "Get Ride Details",
-        "description": "Fetch current state of an active ride, including the linked FleetOps Order and its dynamic status flow.",
+        "description": "جلب الحالة الحالية لرحلة نشطة، بما في ذلك طلب FleetOps المرتبط وتدفق حالته الديناميكي.",
         "tags": ["Driver - Rides"],
         "security": [
           { "bearerAuth": [] },
@@ -234,7 +234,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The ride resource with expanded relationships.",
+            "description": "مورد الرحلة مع العلاقات الموسعة.",
             "content": {
               "application/json": {
                 "schema": {
@@ -246,7 +246,7 @@
               }
             }
           },
-          "403": { "description": "Unauthorized - Driver is not assigned to this ride." }
+          "403": { "description": "غير مصرح - السائق غير معين لهذه الرحلة." }
         }
       }
     },
@@ -277,7 +277,7 @@
           }
         },
         "responses": {
-          "201": { "description": "Bid submitted." }
+          "201": { "description": "تم تقديم العرض." }
         }
       }
     },
@@ -300,14 +300,14 @@
                 "type": "object",
                 "required": ["status"],
                 "properties": {
-                  "status": { "type": "string", "example": "arrived", "description": "Status code (e.g., arrived, started, completed)" }
+                  "status": { "type": "string", "example": "arrived", "description": "رمز الحالة (مثل: arrived، started، completed)" }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Status updated and synced with FleetOps Order." }
+          "200": { "description": "تم تحديث الحالة ومزامنتها مع طلب FleetOps." }
         }
       }
     },
@@ -337,7 +337,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Passenger rated successfully." }
+          "200": { "description": "تم تقييم الراكب بنجاح." }
         }
       }
     },
@@ -353,7 +353,7 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "200": { "description": "Trip Status updated to IN_TRANSIT." }
+          "200": { "description": "تم تحديث حالة الرحلة إلى IN_TRANSIT." }
         }
       }
     },
@@ -366,7 +366,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List of vehicle categories."
+            "description": "قائمة فئات المركبات."
           }
         }
       },
@@ -401,7 +401,7 @@
           }
         },
         "responses": {
-          "201": { "description": "Vehicle Category created." }
+          "201": { "description": "تم إنشاء فئة المركبة." }
         }
       }
     },
@@ -416,7 +416,7 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "200": { "description": "Vehicle Category details." }
+          "200": { "description": "تفاصيل فئة المركبة." }
         }
       },
       "put": {
@@ -452,7 +452,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Vehicle Category updated." }
+          "200": { "description": "تم تحديث فئة المركبة." }
         }
       },
       "delete": {
@@ -465,7 +465,7 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "204": { "description": "Vehicle Category deleted." }
+          "204": { "description": "تم حذف فئة المركبة." }
         }
       }
     },
@@ -478,7 +478,7 @@
         ],
         "responses": {
           "200": {
-            "description": "List of vehicle sub categories."
+            "description": "قائمة الفئات الفرعية للمركبات."
           }
         }
       },
@@ -510,7 +510,7 @@
           }
         },
         "responses": {
-          "201": { "description": "Vehicle Sub Category created." }
+          "201": { "description": "تم إنشاء الفئة الفرعية للمركبة." }
         }
       }
     },
@@ -525,7 +525,7 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "200": { "description": "Vehicle Sub Category details." }
+          "200": { "description": "تفاصيل الفئة الفرعية للمركبة." }
         }
       },
       "put": {
@@ -558,7 +558,7 @@
           }
         },
         "responses": {
-          "200": { "description": "Vehicle Sub Category updated." }
+          "200": { "description": "تم تحديث الفئة الفرعية للمركبة." }
         }
       },
       "delete": {
@@ -571,26 +571,26 @@
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
-          "204": { "description": "Vehicle Sub Category deleted." }
+          "204": { "description": "تم حذف الفئة الفرعية للمركبة." }
         }
       }
     },
     "/profiles/{type}/{id}/reviews": {
       "get": {
         "summary": "Get Profile Review History",
-        "description": "Fetch a paginated list of reviews for a specific driver or customer profile.",
+        "description": "جلب قائمة مرقمة من التقييمات لملف تعريف سائق أو عميل معين.",
         "tags": ["General - Profiles"],
         "security": [
           { "bearerAuth": [] }
         ],
         "parameters": [
           { "in": "path", "name": "type", "required": true, "schema": { "type": "string", "enum": ["driver", "customer"] } },
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID of the driver or customer contact." },
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "الـ Public ID لجهة اتصال السائق أو العميل." },
           { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
         ],
         "responses": {
           "200": {
-            "description": "Paginated list of reviews.",
+            "description": "قائمة مرقمة من التقييمات.",
             "content": {
               "application/json": {
                 "schema": {
@@ -616,7 +616,7 @@
     "/admin/drivers/leaderboard": {
       "get": {
         "summary": "Driver Leaderboard",
-        "description": "Returns a paginated list of all active drivers sorted by their total earnings and completed ride counts.",
+        "description": "إرجاع قائمة مرقمة لجميع السائقين النشطين مرتبة حسب إجمالي أرباحهم وعدد الرحلات المكتملة.",
         "tags": ["Admin - Drivers"],
         "security": [
           { "bearerAuth": [] }
@@ -626,23 +626,23 @@
           { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
         ],
         "responses": {
-          "200": { "description": "Leaderboard data for all active drivers." }
+          "200": { "description": "بيانات لوحة المتصدرين لجميع السائقين النشطين." }
         }
       }
     },
     "/admin/drivers/{id}/stats": {
       "get": {
         "summary": "Detailed Driver Stats",
-        "description": "Fetch real-time earnings, rating, and ride counts for a specific driver.",
+        "description": "جلب الأرباح والتقييم وأعداد الرحلات في الوقت الفعلي لسائق محدد.",
         "tags": ["Admin - Drivers"],
         "security": [
           { "bearerAuth": [] }
         ],
         "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID of the driver." }
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "الـ Public ID للسائق." }
         ],
         "responses": {
-          "200": { "description": "Aggregated driver statistics." }
+          "200": { "description": "إحصائيات السائق المجمعة." }
         }
       }
     }
