@@ -386,4 +386,90 @@ class CustomerRideController extends Controller
 
         return response()->json(['message' => 'Driver rated successfully.']);
     }
+
+    /**
+     * Estimate the cost of a ride for all available vehicle categories.
+     */
+    public function estimate(Request $request)
+    {
+        $request->validate([
+            'distance_meters'           => 'nullable|integer',
+            'duration_seconds'          => 'nullable|integer',
+            'pickup_lat'                => 'nullable|numeric',
+            'pickup_lng'                => 'nullable|numeric',
+            'dropoff_lat'               => 'nullable|numeric',
+            'dropoff_lng'               => 'nullable|numeric',
+            'currency'                  => 'nullable|string|size:3',
+            'vehicle_sub_category_uuid' => 'nullable|uuid',
+        ]);
+
+        $distance = $request->input('distance_meters');
+        $duration = $request->input('duration_seconds');
+        $requestedSubUuid = $request->input('vehicle_sub_category_uuid');
+
+        // If coordinates provided but no distance, use a simple mock calculation
+        if (!$distance && $request->filled(['pickup_lat', 'pickup_lng', 'dropoff_lat', 'dropoff_lng'])) {
+            $distance = 5000; // Mock 5km
+            $duration = 600;  // Mock 10 mins
+        }
+
+        if (!$distance || !$duration) {
+            return response()->error('Insufficient data for estimation. Provide distance/duration or coordinates.', 422);
+        }
+
+        $currency = $request->input('currency', session('rides_currency', 'YER'));
+        $storeUuid = session('rides_store');
+        $companyUuid = session('company');
+
+        $categoriesQuery = VehicleCategory::where('is_active', true);
+
+        if ($storeUuid) {
+            $categoriesQuery->where('store_uuid', $storeUuid);
+        } elseif ($companyUuid) {
+            $categoriesQuery->where('company_uuid', $companyUuid)
+                            ->whereNull('store_uuid');
+        }
+
+        $categories = $categoriesQuery->orderBy('sort_order', 'asc')->get();
+        $estimates = [];
+
+        foreach ($categories as $category) {
+            $name = $category->name;
+            $fareMultiplier = 100;
+            $subCategoryUuid = null;
+
+            // Check if a specifically requested sub-category belongs to this parent category
+            if ($requestedSubUuid) {
+                $subCategory = $category->subCategories->firstWhere('uuid', $requestedSubUuid);
+                if ($subCategory) {
+                    $name = $subCategory->name;
+                    $fareMultiplier = $subCategory->fare_multiplier;
+                    $subCategoryUuid = $subCategory->uuid;
+                }
+            }
+
+            $estimates[] = [
+                'vehicle_category_uuid'     => $category->uuid,
+                'vehicle_sub_category_uuid' => $subCategoryUuid,
+                'public_id'                 => $category->public_id,
+                'name'                      => $name,
+                'key'                       => $category->key,
+                'description'               => $category->description,
+                'icon'                      => $category->icon,
+                'base_fare'                 => $category->base_fare,
+                'per_km_fare'               => $category->per_km_fare,
+                'per_min_fare'              => $category->per_min_fare,
+                'min_fare'                  => $category->min_fare,
+                'currency'                  => $category->currency ?? $currency,
+                'estimated_fare'            => $category->calculateFare($distance, $duration, $fareMultiplier),
+            ];
+        }
+
+        return response()->json([
+            'distance_meters'  => $distance,
+            'duration_seconds' => $duration,
+            'currency'         => $currency,
+            'estimates'        => $estimates,
+        ]);
+    }
 }

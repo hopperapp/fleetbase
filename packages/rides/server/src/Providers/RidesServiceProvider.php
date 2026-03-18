@@ -65,6 +65,8 @@ class RidesServiceProvider extends CoreServiceProvider
         $this->app->register(CoreServiceProvider::class);
         $this->app->register(FleetOpsServiceProvider::class);
         $this->app->register(StorefrontServiceProvider::class);
+
+        $this->mergeConfigFrom(__DIR__ . '/../../../config/rides.php', 'rides');
     }
 
     /**
@@ -77,7 +79,6 @@ class RidesServiceProvider extends CoreServiceProvider
         $this->registerMiddleware();
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
-        $this->mergeConfigFrom(__DIR__ . '/../../../config/rides.php', 'rides');
 
         // Register Morph Map for polymorphic relationships
         Relation::morphMap([

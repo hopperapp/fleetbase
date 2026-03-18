@@ -65,9 +65,13 @@
                 "type": "object",
                 "properties": {
                   "distance_meters": { "type": "integer" },
-                  "duration_seconds": { "type": "integer" }
-                },
-                "required": ["distance_meters", "duration_seconds"]
+                  "duration_seconds": { "type": "integer" },
+                  "pickup_lat": { "type": "number" },
+                  "pickup_lng": { "type": "number" },
+                  "dropoff_lat": { "type": "number" },
+                  "dropoff_lng": { "type": "number" },
+                  "vehicle_sub_category_uuid": { "type": "string" }
+                }
               }
             }
           }

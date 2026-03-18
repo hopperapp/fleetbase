@@ -34,7 +34,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                 });
 
                 // Price estimation
-                $router->post('estimate', 'CustomerEstimateController@estimate');
+                $router->post('estimate', 'CustomerRideController@estimate');
 
                 // Ride management
                 $router->group(['prefix' => 'rides'], function () use ($router) {

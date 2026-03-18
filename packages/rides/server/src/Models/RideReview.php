@@ -73,6 +73,16 @@ class RideReview extends Model
         return $this->belongsTo(\Fleetbase\Models\Company::class, 'company_uuid', 'uuid');
     }
 
+    public function reviewer()
+    {
+        return $this->morphTo(__FUNCTION__, 'reviewer_type', 'reviewer_uuid');
+    }
+
+    public function reviewee()
+    {
+        return $this->morphTo(__FUNCTION__, 'reviewee_type', 'reviewee_uuid');
+    }
+
     // ─────────────────────────────────────────────
     // Static Helpers
     // ─────────────────────────────────────────────
