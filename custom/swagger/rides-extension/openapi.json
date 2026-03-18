@@ -103,7 +103,23 @@
                   "dropoff_longitude": { "type": "number" },
                   "distance_meters": { "type": "integer" },
                   "duration_seconds": { "type": "integer" },
-                  "pricing_method": { "type": "string", "enum": ["auto", "fixed", "bidding"] }
+                  "pricing_method": { 
+                    "type": "string", 
+                    "enum": ["auto", "bidding"],
+                    "description": "'auto' uses the internal fare calculator based on distance/duration. 'bidding' allows the customer to propose a price (offered_fare) which drivers can then outbid or accept."
+                  },
+                  "offered_fare": { 
+                    "type": "number",
+                    "description": "Required if pricing_method is 'bidding'. The amount (in minor units) the customer is offering to pay for the ride."
+                  },
+                  "store_uuid": {
+                    "type": "string",
+                    "description": "The unique identifier of the Storefront this ride belongs to. Used for multi-tenant and branch-specific context."
+                  },
+                  "vehicle_sub_category_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of a specific vehicle sub-category (e.g., 'Motorcycle with Fur') to tailor the request."
+                  }
                 },
                 "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
               }

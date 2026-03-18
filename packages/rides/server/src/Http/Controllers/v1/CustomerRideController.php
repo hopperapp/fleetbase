@@ -32,14 +32,16 @@ class CustomerRideController extends Controller
             'dropoff_longitude'     => 'required|numeric',
             'pickup_address'        => 'nullable|string',
             'dropoff_address'       => 'nullable|string',
-            'distance_meters'       => 'required|integer',
-            'duration_seconds'      => 'required|integer',
-            'pricing_method'        => 'required|in:auto,fixed,bidding',
-            'customer_price'        => 'required_if:pricing_method,fixed|nullable|integer',
-            'payment_method'        => 'nullable|in:cash,transfer,wallet',
-            'passenger_count'       => 'nullable|integer|min:1',
-            'currency'              => 'nullable|string|size:3',
-            'meta'                  => 'nullable|array',
+            'distance_meters'            => 'required|integer',
+            'duration_seconds'           => 'required|integer',
+            'pricing_method'             => 'required|in:auto,bidding',
+            'offered_fare'               => 'required_if:pricing_method,bidding|nullable|numeric',
+            'payment_method'             => 'nullable|in:cash,transfer,wallet',
+            'passenger_count'            => 'nullable|integer|min:1',
+            'currency'                   => 'nullable|string|size:3',
+            'vehicle_sub_category_uuid'  => 'nullable|uuid|exists:vehicle_sub_categories,uuid',
+            'store_uuid'                 => 'nullable|uuid|exists:stores,uuid',
+            'meta'                       => 'nullable|array',
         ]);
 
         $companyUuid  = session('company');
@@ -70,12 +72,6 @@ class CustomerRideController extends Controller
             'address'      => $request->input('dropoff_address', 'Unknown Address'),
         ]);
 
-        // Fallback to auto if they selected fixed but gave no price
-        $pricingMethod = $request->input('pricing_method');
-        if ($pricingMethod === 'fixed' && !$request->filled('customer_price')) {
-            $pricingMethod = 'auto';
-        }
-
         // Determine the actual status for the ride
         $status = Ride::STATUS_SEARCHING;
         if ($pricingMethod === 'bidding') {
@@ -83,29 +79,30 @@ class CustomerRideController extends Controller
         }
 
         $ride = Ride::create([
-            'company_uuid'           => $companyUuid,
-            'store_uuid'             => $storeUuid,
-            'network_uuid'           => $networkUuid,
-            'customer_uuid'          => $customerUuid,
-            'vehicle_category_uuid'  => $request->input('vehicle_category_uuid'),
-            'pricing_method'         => $pricingMethod,
-            'estimated_price'        => $estimatedPrice,
-            'customer_price'         => $request->input('customer_price'),
-            'currency'               => $request->input('currency', session('rides_currency', 'YER')),
-            'payment_method'         => $request->input('payment_method', 'cash'),
-            'distance_meters'        => $request->input('distance_meters'),
-            'duration_seconds'       => $request->input('duration_seconds'),
-            'pickup_latitude'        => $request->input('pickup_latitude'),
-            'pickup_longitude'       => $request->input('pickup_longitude'),
-            'pickup_address'         => $request->input('pickup_address'),
-            'dropoff_latitude'       => $request->input('dropoff_latitude'),
-            'dropoff_longitude'      => $request->input('dropoff_longitude'),
-            'dropoff_address'        => $request->input('dropoff_address'),
-            'pickup_place_uuid'      => $pickupPlace->uuid,
-            'dropoff_place_uuid'     => $dropoffPlace->uuid,
-            'status'                 => $status,
-            'passenger_count'        => $request->input('passenger_count', 1),
-            'meta'                   => $request->input('meta', []),
+            'company_uuid'              => $companyUuid,
+            'store_uuid'                => $storeUuid,
+            'network_uuid'              => $networkUuid,
+            'customer_uuid'             => $customerUuid,
+            'vehicle_category_uuid'     => $request->input('vehicle_category_uuid'),
+            'vehicle_sub_category_uuid' => $request->input('vehicle_sub_category_uuid'),
+            'pricing_method'            => $pricingMethod,
+            'estimated_price'           => $estimatedPrice,
+            'customer_price'            => $request->input('offered_fare'),
+            'currency'                  => $request->input('currency', session('rides_currency', 'YER')),
+            'payment_method'            => $request->input('payment_method', 'cash'),
+            'distance_meters'           => $request->input('distance_meters'),
+            'duration_seconds'          => $request->input('duration_seconds'),
+            'pickup_latitude'           => $request->input('pickup_latitude'),
+            'pickup_longitude'          => $request->input('pickup_longitude'),
+            'pickup_address'            => $request->input('pickup_address'),
+            'dropoff_latitude'          => $request->input('dropoff_latitude'),
+            'dropoff_longitude'         => $request->input('dropoff_longitude'),
+            'dropoff_address'           => $request->input('dropoff_address'),
+            'pickup_place_uuid'         => $pickupPlace->uuid,
+            'dropoff_place_uuid'        => $dropoffPlace->uuid,
+            'status'                    => $status,
+            'passenger_count'           => $request->input('passenger_count', 1),
+            'meta'                      => $request->input('meta', []),
         ]);
 
         // Dispatch broadcast to drivers
