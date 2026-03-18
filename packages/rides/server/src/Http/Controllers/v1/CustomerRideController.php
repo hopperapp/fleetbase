@@ -22,16 +22,16 @@ class CustomerRideController extends Controller
     /**
      * Request a new ride.
      */
-    public function request(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
-            'vehicle_category_uuid' => 'required|uuid|exists:vehicle_categories,uuid',
-            'pickup_latitude'       => 'required|numeric',
-            'pickup_longitude'      => 'required|numeric',
-            'dropoff_latitude'      => 'required|numeric',
-            'dropoff_longitude'     => 'required|numeric',
-            'pickup_address'        => 'nullable|string',
-            'dropoff_address'       => 'nullable|string',
+            'vehicle_category_uuid'      => 'required|uuid|exists:vehicle_categories,uuid',
+            'pickup_latitude'            => 'required|numeric',
+            'pickup_longitude'           => 'required|numeric',
+            'dropoff_latitude'           => 'required|numeric',
+            'dropoff_longitude'          => 'required|numeric',
+            'pickup_address'             => 'nullable|string',
+            'dropoff_address'            => 'nullable|string',
             'distance_meters'            => 'required|integer',
             'duration_seconds'           => 'required|integer',
             'pricing_method'             => 'required|in:auto,bidding',
@@ -44,10 +44,11 @@ class CustomerRideController extends Controller
             'meta'                       => 'nullable|array',
         ]);
 
-        $companyUuid  = session('company');
-        $customerUuid = session('customer');
-        $storeUuid    = $request->input('store_uuid', session('rides_store'));
-        $networkUuid  = $request->input('network_uuid', session('rides_network'));
+        $companyUuid   = session('company');
+        $customerUuid  = session('customer');
+        $storeUuid     = $request->input('store_uuid', session('rides_store'));
+        $networkUuid   = $request->input('network_uuid', session('rides_network'));
+        $pricingMethod = $request->input('pricing_method');
 
         if (!$companyUuid || !$customerUuid) {
             return response()->error('Authentication failed: Missing company or customer context.', 401);

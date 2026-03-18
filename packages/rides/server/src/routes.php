@@ -7,38 +7,34 @@ use Illuminate\Support\Facades\Route;
 | Hopper Rides API Routes
 |--------------------------------------------------------------------------
 |
-| Routes for the Ride-Hailing extension. Split into Customer-facing
-| and Driver-facing groups, both protected by the rides.api middleware.
+| Routes for the Ride-Hailing extension. Split into Customer, Driver, and Admin.
+| Both Customer and Driver routes use high-level session-based authentication
+| for the mobile apps, while Admin routes use standard Fleetbase API guards.
 |
 */
 
-Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Rides\Http\Controllers')->group(
+Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Rides\Http\Controllers\v1')->group(
     function ($router) {
+
         /*
         |--------------------------------------------------------------------------
-        | Customer API Routes
+        | v1 Customer Routes
         |--------------------------------------------------------------------------
-        |
-        | Customer-facing endpoints for requesting rides, viewing estimates,
-        | managing bids, and tracking active rides.
-        |
         */
         Route::prefix('v1/customer')
             ->middleware('rides.api')
-            ->namespace('v1')
             ->group(function ($router) {
-                // Vehicle categories
-                $router->group(['prefix' => 'vehicles'], function () use ($router) {
-                    $router->get('/', 'CustomerVehicleController@index');
-                    $router->get('{key}', 'CustomerVehicleController@show');
-                });
+                
+                // Vehicles
+                $router->get('vehicles', 'CustomerVehicleController@index');
+                $router->get('vehicles/{key}', 'CustomerVehicleController@show');
 
-                // Price estimation
+                // Estimates
                 $router->post('estimate', 'CustomerRideController@estimate');
 
-                // Ride management
+                // Rides
                 $router->group(['prefix' => 'rides'], function () use ($router) {
-                    $router->post('/', 'CustomerRideController@request');
+                    $router->post('/', 'CustomerRideController@store'); // Request a ride
                     $router->get('active', 'CustomerRideController@active');
                     $router->get('history', 'CustomerRideController@history');
                     $router->get('{id}', 'CustomerRideController@show');
@@ -51,90 +47,58 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
 
         /*
         |--------------------------------------------------------------------------
-        | Driver API Routes
+        | v1 Driver Routes
         |--------------------------------------------------------------------------
-        |
-        | Driver-facing endpoints for discovering rides, submitting bids,
-        | accepting/declining rides, and updating trip status.
-        |
         */
         Route::prefix('v1/driver')
             ->middleware('rides.api')
-            ->namespace('v1')
             ->group(function ($router) {
-                // Ride discovery & actions
+                
+                // Discovery & Lifecycle
                 $router->group(['prefix' => 'rides'], function () use ($router) {
                     $router->get('available', 'DriverRideController@available');
                     $router->get('{id}', 'DriverRideController@show');
-                    $router->post('{id}/accept', 'DriverRideController@accept');
-                    $router->post('{id}/decline', 'DriverRideController@decline');
-                    $router->post('{id}/cancel', 'DriverRideController@cancel');
-
-                    // Trip status flow (Dynamic)
                     $router->post('{id}/status', 'DriverRideController@updateStatus');
-
-                    // Individual status endpoints (Deprecated in favor of /status)
-                    $router->post('{id}/en-route', 'DriverRideController@enRoute');
-                    $router->post('{id}/arrived', 'DriverRideController@arrived');
-                    $router->post('{id}/start', 'DriverRideController@start');
-                    $router->post('{id}/complete', 'DriverRideController@complete');
-
-                    // Rating/Review
                     $router->post('{id}/rate', 'DriverRideController@rate');
+                    
+                    // Legacy Actions (Mapped to updateStatus)
+                    $router->post('{id}/start', 'DriverRideController@start');
                 });
 
                 // Bidding
-                $router->group(['prefix' => 'bids'], function () use ($router) {
-                    $router->post('{rideId}', 'DriverBidController@submit');
-                    $router->put('{rideId}', 'DriverBidController@update');
-                    $router->delete('{rideId}', 'DriverBidController@withdraw');
-                });
+                $router->post('bids/{rideId}', 'DriverBidController@submit');
+                $router->put('bids/{rideId}', 'DriverBidController@update');
+                $router->delete('bids/{rideId}', 'DriverBidController@withdraw');
             });
 
         /*
         |--------------------------------------------------------------------------
-        | Admin API Routes
+        | v1 Admin Routes
         |--------------------------------------------------------------------------
-        |
-        | Admin endpoints for managing categories and system settings.
-        |
         */
         Route::prefix('v1/admin')
             ->middleware('fleetbase.api')
-            ->namespace('v1')
             ->group(function ($router) {
-                $router->group(['prefix' => 'vehicle-categories'], function () use ($router) {
-                    $router->get('/', 'AdminVehicleCategoryController@index');
-                    $router->post('/', 'AdminVehicleCategoryController@store');
-                    $router->get('{id}', 'AdminVehicleCategoryController@show');
-                    $router->put('{id}', 'AdminVehicleCategoryController@update');
-                    $router->delete('{id}', 'AdminVehicleCategoryController@destroy');
-                });
+                
+                // Category Management
+                $router->apiResource('vehicle-categories', 'AdminVehicleCategoryController');
+                $router->apiResource('vehicle-sub-categories', 'AdminVehicleSubCategoryController');
 
+                // Driver Performance & Leaderboard
                 $router->group(['prefix' => 'drivers'], function () use ($router) {
                     $router->get('leaderboard', 'AdminDriverController@leaderboard');
                     $router->get('{id}/stats', 'AdminDriverController@stats');
                 });
-                
-                $router->group(['prefix' => 'vehicle-sub-categories'], function () use ($router) {
-                    $router->get('/', 'AdminVehicleSubCategoryController@index');
-                    $router->post('/', 'AdminVehicleSubCategoryController@store');
-                    $router->get('{id}', 'AdminVehicleSubCategoryController@show');
-                    $router->put('{id}', 'AdminVehicleSubCategoryController@update');
-                    $router->delete('{id}', 'AdminVehicleSubCategoryController@destroy');
-                });
             });
 
         /*
         |--------------------------------------------------------------------------
-        | Profile & Review Routes
+        | v1 Global Profile/Review Routes
         |--------------------------------------------------------------------------
         */
-        Route::prefix('v1')
-            ->middleware('rides.api')
-            ->namespace('v1')
-            ->group(function ($router) {
-                $router->get('profiles/{type}/{id}/reviews', 'ProfileController@reviews');
-            });
+        Route::prefix('v1')->group(function ($router) {
+             $router->get('profiles/{type}/{id}/reviews', 'ProfileController@reviews');
+        });
     }
 );
+
