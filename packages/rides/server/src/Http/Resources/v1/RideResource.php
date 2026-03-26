@@ -21,12 +21,14 @@ class RideResource extends JsonResource
             'status'    => $this->status,
             'customer'  => new CustomerResource($this->customer),
             'driver'    => new DriverResource($this->driver),
-            'order'     => [
-                'status'       => $this->order?->status,
-                'order_config' => [
-                    'flow' => $this->order?->orderConfig?->flow,
+            'order'     => $this->order ? [
+                'status'                  => $this->order->status,
+                'order_config'            => [
+                    'flow' => $this->order->orderConfig?->flow,
                 ],
-            ],
+                'next_activity'           => $this->order->orderConfig ? $this->order->orderConfig->nextFirstActivity($this->order)?->toArray() : null,
+                'allowed_next_activities' => $this->order->orderConfig ? $this->order->orderConfig->nextActivity($this->order)->map(fn ($activity) => $activity->toArray())->toArray() : [],
+            ] : null,
         ];
     }
 }

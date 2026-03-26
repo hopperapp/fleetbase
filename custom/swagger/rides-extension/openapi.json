@@ -31,6 +31,38 @@
         "in": "header",
         "name": "Driver-Token"
       }
+    },
+    "schemas": {
+      "Ride": {
+        "type": "object",
+        "description": "JSON representation of a Ride resource",
+        "properties": {
+          "public_id": { "type": "string" },
+          "status": { "type": "string" },
+          "customer": { "type": "object" },
+          "driver": { "type": "object" },
+          "order": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "order_config": {
+                "type": "object",
+                "properties": {
+                  "flow": { "type": "array", "items": { "type": "object" } }
+                }
+              },
+              "next_activity": {
+                "type": "object",
+                "nullable": true
+              },
+              "allowed_next_activities": {
+                "type": "array",
+                "items": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "paths": {
@@ -165,9 +197,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "bid_public_id": { "type": "string" }
-                },
-                "required": ["bid_public_id"]
+                  "bid_public_id": { "type": "string" },
+                  "bid_uuid": { "type": "string" }
+                }
               }
             }
           }
@@ -341,22 +373,7 @@
         }
       }
     },
-    "/driver/rides/{id}/start": {
-      "post": {
-        "summary": "Start Trip (Legacy)",
-        "tags": ["Driver - Rides"],
-        "security": [
-          { "bearerAuth": [] },
-          { "driverToken": [] }
-        ],
-        "parameters": [
-          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
-        ],
-        "responses": {
-          "200": { "description": "تم تحديث حالة الرحلة إلى IN_TRANSIT." }
-        }
-      }
-    },
+
     "/admin/vehicle-categories": {
       "get": {
         "summary": "List Vehicle Categories",

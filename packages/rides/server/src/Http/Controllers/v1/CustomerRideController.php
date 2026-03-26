@@ -39,8 +39,8 @@ class CustomerRideController extends Controller
             'payment_method'             => 'nullable|in:cash,transfer,wallet',
             'passenger_count'            => 'nullable|integer|min:1',
             'currency'                   => 'nullable|string|size:3',
-            'vehicle_sub_category_uuid'  => 'nullable|uuid|exists:vehicle_sub_categories,uuid',
-            'store_uuid'                 => 'nullable|uuid|exists:stores,uuid',
+            'vehicle_sub_category_uuid'  => 'nullable|uuid',
+            'store_uuid'                 => 'nullable|uuid',
             'meta'                       => 'nullable|array',
         ]);
 
@@ -54,9 +54,12 @@ class CustomerRideController extends Controller
             return response()->error('Authentication failed: Missing company or customer context.', 401);
         }
 
+        $distance = (int) $request->input('distance_meters', 5000);
+        $duration = (int) $request->input('duration_seconds', 600);
+
         // Get the vehicle category to estimate max price based on their system
         $category = VehicleCategory::find($request->input('vehicle_category_uuid'));
-        $estimatedPrice = $category ? $category->calculateFare($request->input('distance_meters'), $request->input('duration_seconds')) : 0;
+        $estimatedPrice = $category ? $category->calculateFare($distance, $duration) : 0;
 
         // Initialize places (create inline since we have lat/lng)
         $pickupPlace = Place::create([
@@ -73,7 +76,8 @@ class CustomerRideController extends Controller
             'address'      => $request->input('dropoff_address', 'Unknown Address'),
         ]);
 
-        // Determine the actual status for the ride
+        // Determine pricing method and status
+        $pricingMethod = $request->input('pricing_method', 'auto');
         $status = Ride::STATUS_SEARCHING;
         if ($pricingMethod === 'bidding') {
             $status = Ride::STATUS_BIDDING;
@@ -91,8 +95,8 @@ class CustomerRideController extends Controller
             'customer_price'            => $request->input('offered_fare'),
             'currency'                  => $request->input('currency', session('rides_currency', 'YER')),
             'payment_method'            => $request->input('payment_method', 'cash'),
-            'distance_meters'           => $request->input('distance_meters'),
-            'duration_seconds'          => $request->input('duration_seconds'),
+            'distance_meters'           => $distance,
+            'duration_seconds'          => $duration,
             'pickup_latitude'           => $request->input('pickup_latitude'),
             'pickup_longitude'          => $request->input('pickup_longitude'),
             'pickup_address'            => $request->input('pickup_address'),
@@ -158,7 +162,9 @@ class CustomerRideController extends Controller
     {
         $customerUuid = session('customer');
 
-        $ride = Ride::where('public_id', $id)
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })
             ->with(['driver.user', 'vehicleCategory', 'pickupPlace', 'dropoffPlace'])
             ->firstOrFail();
 
@@ -179,7 +185,9 @@ class CustomerRideController extends Controller
             'cancel_reason' => 'nullable|string|max:255',
         ]);
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         // Ensure authorization
         if ($ride->customer_uuid !== session('customer')) {
@@ -213,7 +221,9 @@ class CustomerRideController extends Controller
      */
     public function bids(Request $request, string $id)
     {
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->customer_uuid !== session('customer')) {
             return response()->error('Unauthorized.', 403);
@@ -238,10 +248,19 @@ class CustomerRideController extends Controller
     public function acceptBid(Request $request, string $id)
     {
         $request->validate([
-            'bid_public_id' => 'required|string|exists:ride_bids,public_id',
+            'bid_public_id' => 'nullable|string|exists:ride_bids,public_id',
+            'bid_uuid'      => 'nullable|string|exists:ride_bids,uuid',
         ]);
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $bidId = $request->input('bid_uuid') ?: $request->input('bid_public_id');
+
+        if (!$bidId) {
+            return response()->error('A bid ID is required.', 422);
+        }
+
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->customer_uuid !== session('customer')) {
             return response()->error('Unauthorized.', 403);
@@ -251,7 +270,9 @@ class CustomerRideController extends Controller
             return response()->error('Ride is no longer accepting bids.', 422);
         }
 
-        $bid = RideBid::findByPublicId($request->input('bid_public_id'));
+        $bid = RideBid::where(function ($q) use ($bidId) {
+            $q->where('public_id', $bidId)->orWhere('uuid', $bidId);
+        })->first();
 
         if (!$bid || $bid->ride_uuid !== $ride->uuid || !$bid->isActive()) {
             return response()->error('Invalid or expired bid selected.', 422);
@@ -357,7 +378,9 @@ class CustomerRideController extends Controller
             'tags'    => 'nullable|array',
         ]);
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->customer_uuid !== session('customer')) {
             return response()->error('Unauthorized.', 403);

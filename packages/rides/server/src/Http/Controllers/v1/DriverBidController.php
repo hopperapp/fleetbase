@@ -29,7 +29,9 @@ class DriverBidController extends Controller
             return response()->error('Authentication failed: Missing company or driver context.', 401);
         }
 
-        $ride = Ride::where('public_id', $rideId)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($rideId) {
+            $q->where('public_id', $rideId)->orWhere('uuid', $rideId);
+        })->firstOrFail();
 
         // Validate ride conditions
         if ($ride->company_uuid !== $companyUuid) {
@@ -89,7 +91,9 @@ class DriverBidController extends Controller
         ]);
 
         $driverUuid = session('driver');
-        $ride = Ride::where('public_id', $rideId)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($rideId) {
+            $q->where('public_id', $rideId)->orWhere('uuid', $rideId);
+        })->firstOrFail();
 
         $bid = RideBid::where('ride_uuid', $ride->uuid)
             ->where('driver_uuid', $driverUuid)
@@ -121,7 +125,9 @@ class DriverBidController extends Controller
     public function withdraw(Request $request, string $rideId)
     {
         $driverUuid = session('driver');
-        $ride = Ride::where('public_id', $rideId)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($rideId) {
+            $q->where('public_id', $rideId)->orWhere('uuid', $rideId);
+        })->firstOrFail();
 
         $bid = RideBid::where('ride_uuid', $ride->uuid)
             ->where('driver_uuid', $driverUuid)

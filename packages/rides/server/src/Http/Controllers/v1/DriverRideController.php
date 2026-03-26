@@ -60,7 +60,9 @@ class DriverRideController extends Controller
      */
     public function show(string $id)
     {
-        $ride = Ride::where('public_id', $id)
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })
             ->with(['customer', 'vehicleCategory', 'pickupPlace', 'dropoffPlace', 'order'])
             ->firstOrFail();
 
@@ -85,7 +87,9 @@ class DriverRideController extends Controller
         $vehicleUuid = session('driver_vehicle');
         $companyUuid = session('company');
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->status !== Ride::STATUS_SEARCHING) {
             return response()->error('This ride is no longer available to accept.', 422);
@@ -190,7 +194,9 @@ class DriverRideController extends Controller
             'cancel_reason' => 'nullable|string|max:255',
         ]);
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->driver_uuid !== session('driver')) {
             return response()->error('Unauthorized.', 403);
@@ -220,7 +226,9 @@ class DriverRideController extends Controller
      */
     public function updateStatus(Request $request, string $id)
     {
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
         
         if ($ride->driver_uuid !== session('driver')) {
             return response()->error('Unauthorized.', 403);
@@ -278,42 +286,7 @@ class DriverRideController extends Controller
         ]);
     }
 
-    /**
-     * Trip Status Update: Driver is en route (Legacy Wrapper).
-     */
-    public function enRoute(Request $request, string $id)
-    {
-        $request->merge(['status' => Ride::STATUS_DRIVER_EN_ROUTE]);
-        return $this->updateStatus($request, $id);
-    }
 
-    /**
-     * Trip Status Update: Driver has arrived at pickup (Legacy Wrapper).
-     */
-    public function arrived(Request $request, string $id)
-    {
-        // Custom: Rides uses 'arrived_at_pickup' for Ride, FleetOps uses 'arrived' for Order
-        $request->merge(['status' => 'arrived']);
-        return $this->updateStatus($request, $id);
-    }
-
-    /**
-     * Trip Status Update: Passenger onboard, trip started (Legacy Wrapper).
-     */
-    public function start(Request $request, string $id)
-    {
-        $request->merge(['status' => 'started']);
-        return $this->updateStatus($request, $id);
-    }
-
-    /**
-     * Trip Status Update: Arrived at destination (Legacy Wrapper).
-     */
-    public function complete(Request $request, string $id)
-    {
-        $request->merge(['status' => 'completed']);
-        return $this->updateStatus($request, $id);
-    }
 
     /**
      * Driver rates the passenger.
@@ -326,7 +299,9 @@ class DriverRideController extends Controller
             'tags'    => 'nullable|array',
         ]);
 
-        $ride = Ride::where('public_id', $id)->firstOrFail();
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->firstOrFail();
 
         if ($ride->driver_uuid !== session('driver')) {
             return response()->error('Unauthorized.', 403);

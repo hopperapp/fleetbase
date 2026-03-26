@@ -24,7 +24,6 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
         Route::prefix('v1/customer')
             ->middleware('rides.api')
             ->group(function ($router) {
-                
                 // Vehicles
                 $router->get('vehicles', 'CustomerVehicleController@index');
                 $router->get('vehicles/{key}', 'CustomerVehicleController@show');
@@ -60,9 +59,6 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->get('{id}', 'DriverRideController@show');
                     $router->post('{id}/status', 'DriverRideController@updateStatus');
                     $router->post('{id}/rate', 'DriverRideController@rate');
-                    
-                    // Legacy Actions (Mapped to updateStatus)
-                    $router->post('{id}/start', 'DriverRideController@start');
                 });
 
                 // Bidding
@@ -79,7 +75,6 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
         Route::prefix('v1/admin')
             ->middleware('fleetbase.api')
             ->group(function ($router) {
-                
                 // Category Management
                 $router->apiResource('vehicle-categories', 'AdminVehicleCategoryController');
                 $router->apiResource('vehicle-sub-categories', 'AdminVehicleSubCategoryController');
@@ -89,6 +84,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->get('leaderboard', 'AdminDriverController@leaderboard');
                     $router->get('{id}/stats', 'AdminDriverController@stats');
                 });
+
             });
 
         /*

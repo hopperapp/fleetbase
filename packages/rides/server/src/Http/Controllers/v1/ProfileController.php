@@ -20,8 +20,8 @@ class ProfileController extends Controller
 
         // We use public_id to find the internal UUID
         $model = ($type === 'driver')
-            ? \Fleetbase\FleetOps\Models\Driver::where('public_id', $id)->firstOrFail()
-            : \Fleetbase\FleetOps\Models\Contact::where('public_id', $id)->firstOrFail();
+            ? \Fleetbase\FleetOps\Models\Driver::where(function ($q) use ($id) { $q->where('public_id', $id)->orWhere('uuid', $id); })->firstOrFail()
+            : \Fleetbase\FleetOps\Models\Contact::where(function ($q) use ($id) { $q->where('public_id', $id)->orWhere('uuid', $id); })->firstOrFail();
 
         $reviews = RideReview::where('reviewee_uuid', $model->uuid)
             ->where('reviewee_type', $type)
