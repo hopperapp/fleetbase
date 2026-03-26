@@ -36,11 +36,11 @@ class CustomerRideController extends Controller
             'duration_seconds'           => 'required|integer',
             'pricing_method'             => 'required|in:auto,bidding',
             'offered_fare'               => 'required_if:pricing_method,bidding|nullable|numeric',
-            'payment_method'             => 'nullable|in:cash,transfer,wallet',
+            'payment_method'             => 'nullable|in:cash,transfer,wallet,card',
             'passenger_count'            => 'nullable|integer|min:1',
             'currency'                   => 'nullable|string|size:3',
-            'vehicle_sub_category_uuid'  => 'nullable|uuid',
-            'store_uuid'                 => 'nullable|uuid',
+            'vehicle_sub_category_uuid'  => 'nullable|string',
+            'store_uuid'                 => 'nullable|string',
             'meta'                       => 'nullable|array',
         ]);
 
@@ -248,8 +248,8 @@ class CustomerRideController extends Controller
     public function acceptBid(Request $request, string $id)
     {
         $request->validate([
-            'bid_public_id' => 'nullable|string|exists:ride_bids,public_id',
-            'bid_uuid'      => 'nullable|string|exists:ride_bids,uuid',
+            'bid_public_id' => 'nullable|string',
+            'bid_uuid'      => 'nullable|string',
         ]);
 
         $bidId = $request->input('bid_uuid') ?: $request->input('bid_public_id');

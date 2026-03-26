@@ -146,7 +146,7 @@
                   },
                   "store_uuid": {
                     "type": "string",
-                    "description": "المعرف الفريد لـ Storefront الذي تنتمي إليه هذه الرحلة. يستخدم لسياق تعدد المستأجرين والفروع المحددة."
+                    "description": "Optional. The UUID of the store if the ride is booked through a specific merchant. Leave null for general network rides."
                   },
                   "vehicle_sub_category_uuid": {
                     "type": "string",

@@ -33,7 +33,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
 
                 // Rides
                 $router->group(['prefix' => 'rides'], function () use ($router) {
-                    $router->post('/', 'CustomerRideController@store'); // Request a ride
+                    $router->post('', 'CustomerRideController@store'); // Request a ride
                     $router->get('active', 'CustomerRideController@active');
                     $router->get('history', 'CustomerRideController@history');
                     $router->get('{id}', 'CustomerRideController@show');
