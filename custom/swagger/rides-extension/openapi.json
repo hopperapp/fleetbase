@@ -1,0 +1,667 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hopper Rides API",
+    "description": "مواصفات واجهة برمجة التطبيقات (API) لإضافة @hopper/rides المخصصة التي تتعامل مع وظائف حجز الرحلات بشكل طبيعي داخل Fleetbase.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Hopper Development API"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/rides/v1",
+      "description": "خادم التطوير المحلي"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "customerToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Customer-Token"
+      },
+      "driverToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Driver-Token"
+      }
+    },
+    "schemas": {
+      "Ride": {
+        "type": "object",
+        "description": "JSON representation of a Ride resource",
+        "properties": {
+          "public_id": { "type": "string" },
+          "status": { "type": "string" },
+          "customer": { "type": "object" },
+          "driver": { "type": "object" },
+          "order": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "order_config": {
+                "type": "object",
+                "properties": {
+                  "flow": { "type": "array", "items": { "type": "object" } }
+                }
+              },
+              "next_activity": {
+                "type": "object",
+                "nullable": true
+              },
+              "allowed_next_activities": {
+                "type": "array",
+                "items": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/customer/vehicles": {
+      "get": {
+        "summary": "List Vehicle Categories",
+        "tags": ["Customer - Vehicles"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "قائمة بفئات المركبات المتاحة في سياق المتجر."
+          }
+        }
+      }
+    },
+    "/customer/estimate": {
+      "post": {
+        "summary": "Estimate Ride Fare",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "distance_meters": { "type": "integer" },
+                  "duration_seconds": { "type": "integer" },
+                  "pickup_lat": { "type": "number" },
+                  "pickup_lng": { "type": "number" },
+                  "dropoff_lat": { "type": "number" },
+                  "dropoff_lng": { "type": "number" },
+                  "vehicle_sub_category_uuid": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تقديرات الأجر حسب الفئة." }
+        }
+      }
+    },
+    "/customer/rides": {
+      "post": {
+        "summary": "Request a Ride",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "pickup_latitude": { "type": "number" },
+                  "pickup_longitude": { "type": "number" },
+                  "dropoff_latitude": { "type": "number" },
+                  "dropoff_longitude": { "type": "number" },
+                  "distance_meters": { "type": "integer" },
+                  "duration_seconds": { "type": "integer" },
+                  "pricing_method": { 
+                    "type": "string", 
+                    "enum": ["auto", "bidding"],
+                    "description": "'auto' يستخدم حاسبة الأجرة الداخلية بناءً على المسافة والمدة. 'bidding' يسمح للعميل باقتراح سعر (offered_fare) يمكن للسائقين المزايدة عليه أو قبوله."
+                  },
+                  "offered_fare": { 
+                    "type": "number",
+                    "description": "مطلوب إذا كان pricing_method هو 'bidding'. المبلغ (بالوحدات الصغرى) الذي يقترحه العميل لدفعه مقابل الرحلة."
+                  },
+                  "store_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of the store if the ride is booked through a specific merchant. Leave null for general network rides."
+                  },
+                  "vehicle_sub_category_uuid": {
+                    "type": "string",
+                    "description": "اختياري. الـ UUID لفئة فرعية محددة للمركبة (مثل 'دراجة نارية بفرو') لتخصيص الطلب."
+                  }
+                },
+                "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "تم طلب الرحلة بنجاح." }
+        }
+      }
+    },
+    "/customer/rides/{id}/bids": {
+      "get": {
+        "summary": "View Active Bids",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "قائمة عروض السائقين النشطة." }
+        }
+      }
+    },
+    "/customer/rides/{id}/accept-bid": {
+      "post": {
+        "summary": "Accept a Bid",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bid_public_id": { "type": "string" },
+                  "bid_uuid": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم قبول العرض وتم إنشاء طلب إرسال محلي." }
+        }
+      }
+    },
+    "/customer/rides/{id}/rate": {
+      "post": {
+        "summary": "Rate Driver",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم تقييم السائق بنجاح." }
+        }
+      }
+    },
+    "/driver/rides/available": {
+      "get": {
+        "summary": "Discover Nearby Available Rides",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "قائمة بالرحلات المطابقة التي لم يتم المزايدة عليها بعد." }
+        }
+      }
+    },
+    "/driver/rides/{id}": {
+      "get": {
+        "summary": "Get Ride Details",
+        "description": "جلب الحالة الحالية لرحلة نشطة، بما في ذلك طلب FleetOps المرتبط وتدفق حالته الديناميكي.",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "مورد الرحلة مع العلاقات الموسعة.",
+            "content": {
+              "application/json": {
+                "schema": {
+                   "type": "object",
+                   "properties": {
+                     "ride": { "$ref": "#/components/schemas/Ride" }
+                   }
+                }
+              }
+            }
+          },
+          "403": { "description": "غير مصرح - السائق غير معين لهذه الرحلة." }
+        }
+      }
+    },
+    "/driver/bids/{rideId}": {
+      "post": {
+        "summary": "Submit Bid",
+        "tags": ["Driver - Bids"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "rideId", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": { "type": "integer" },
+                  "estimated_arrival_min": { "type": "integer" }
+                },
+                "required": ["amount"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "تم تقديم العرض." }
+        }
+      }
+    },
+    "/driver/rides/{id}/status": {
+      "post": {
+        "summary": "Update Ride Status (Dynamic)",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "example": "arrived", "description": "رمز الحالة (مثل: arrived، started، completed)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم تحديث الحالة ومزامنتها مع طلب FleetOps." }
+        }
+      }
+    },
+    "/driver/rides/{id}/rate": {
+      "post": {
+        "summary": "Rate Passenger",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+                  "comment": { "type": "string" },
+                  "tags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم تقييم الراكب بنجاح." }
+        }
+      }
+    },
+
+    "/admin/vehicle-categories": {
+      "get": {
+        "summary": "List Vehicle Categories",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "قائمة فئات المركبات."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "base_fare": { "type": "integer" },
+                  "per_km_fare": { "type": "integer" },
+                  "per_min_fare": { "type": "integer" },
+                  "min_fare": { "type": "integer" },
+                  "currency": { "type": "string" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                },
+                "required": ["name", "key", "base_fare", "per_km_fare", "per_min_fare", "min_fare"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "تم إنشاء فئة المركبة." }
+        }
+      }
+    },
+    "/admin/vehicle-categories/{id}": {
+      "get": {
+        "summary": "Get Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "تفاصيل فئة المركبة." }
+        }
+      },
+      "put": {
+        "summary": "Update Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "base_fare": { "type": "integer" },
+                  "per_km_fare": { "type": "integer" },
+                  "per_min_fare": { "type": "integer" },
+                  "min_fare": { "type": "integer" },
+                  "currency": { "type": "string" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم تحديث فئة المركبة." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Vehicle Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "تم حذف فئة المركبة." }
+        }
+      }
+    },
+    "/admin/vehicle-sub-categories": {
+      "get": {
+        "summary": "List Vehicle Sub Categories",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "responses": {
+          "200": {
+            "description": "قائمة الفئات الفرعية للمركبات."
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "fare_multiplier": { "type": "number", "format": "float" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                },
+                "required": ["vehicle_category_uuid", "name", "key"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "تم إنشاء الفئة الفرعية للمركبة." }
+        }
+      }
+    },
+    "/admin/vehicle-sub-categories/{id}": {
+      "get": {
+        "summary": "Get Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "تفاصيل الفئة الفرعية للمركبة." }
+        }
+      },
+      "put": {
+        "summary": "Update Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "vehicle_category_uuid": { "type": "string" },
+                  "name": { "type": "string" },
+                  "key": { "type": "string" },
+                  "description": { "type": "string" },
+                  "icon": { "type": "string" },
+                  "fare_multiplier": { "type": "number", "format": "float" },
+                  "sort_order": { "type": "integer" },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم تحديث الفئة الفرعية للمركبة." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Vehicle Sub Category",
+        "tags": ["Admin - Vehicles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "تم حذف الفئة الفرعية للمركبة." }
+        }
+      }
+    },
+    "/profiles/{type}/{id}/reviews": {
+      "get": {
+        "summary": "Get Profile Review History",
+        "description": "جلب قائمة مرقمة من التقييمات لملف تعريف سائق أو عميل معين.",
+        "tags": ["General - Profiles"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "type", "required": true, "schema": { "type": "string", "enum": ["driver", "customer"] } },
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "الـ Public ID لجهة اتصال السائق أو العميل." },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "قائمة مرقمة من التقييمات.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reviews": { "type": "array", "items": { "type": "object" } },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "current_page": { "type": "integer" },
+                        "last_page": { "type": "integer" },
+                        "total": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/drivers/leaderboard": {
+      "get": {
+        "summary": "Driver Leaderboard",
+        "description": "إرجاع قائمة مرقمة لجميع السائقين النشطين مرتبة حسب إجمالي أرباحهم وعدد الرحلات المكتملة.",
+        "tags": ["Admin - Drivers"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["total_earnings", "completed_rides"], "default": "total_earnings" } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 15 } }
+        ],
+        "responses": {
+          "200": { "description": "بيانات لوحة المتصدرين لجميع السائقين النشطين." }
+        }
+      }
+    },
+    "/admin/drivers/{id}/stats": {
+      "get": {
+        "summary": "Detailed Driver Stats",
+        "description": "جلب الأرباح والتقييم وأعداد الرحلات في الوقت الفعلي لسائق محدد.",
+        "tags": ["Admin - Drivers"],
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "الـ Public ID للسائق." }
+        ],
+        "responses": {
+          "200": { "description": "إحصائيات السائق المجمعة." }
+        }
+      }
+    }
+  }
+}

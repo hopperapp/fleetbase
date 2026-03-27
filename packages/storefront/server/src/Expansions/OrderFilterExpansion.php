@@ -25,7 +25,11 @@ class OrderFilterExpansion implements Expansion
     {
         return function (?string $storefront) {
             /* @var \Fleetbase\FleetOps\Http\Filter\OrderFilter $this */
-            $this->builder->where('meta->storefront_id', $storefront);
+            if (\Illuminate\Support\Str::startsWith($storefront, 'network')) {
+                $this->builder->where('meta->storefront_network_id', $storefront);
+            } else {
+                $this->builder->where('meta->storefront_id', $storefront);
+            }
         };
     }
 }

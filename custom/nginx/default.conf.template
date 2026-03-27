@@ -43,9 +43,9 @@ server {
   }
 
   location /storefront/docs/ {
-    alias /fleetbase/api/public/storefront/docs/;
+    root /fleetbase/api/public;
     index index.html;
-    try_files $uri $uri/ /storefront/docs/index.html;
+    try_files $uri $uri/ =404;
   }
 
   # Serve Swagger UI for storefront admin as static files
@@ -55,9 +55,9 @@ server {
   }
 
   location /storefront/docs-admin/ {
-    alias /fleetbase/api/public/storefront/docs-admin/;
+    root /fleetbase/api/public;
     index index.html;
-    try_files $uri $uri/ /storefront/docs-admin/index.html;
+    try_files $uri $uri/ =404;
   }
 
   # Serve Swagger UI for Navigator App as static files
@@ -67,9 +67,21 @@ server {
   }
 
   location /fleetops/docs-navigator/ {
-    alias /fleetbase/api/public/fleetops/docs-navigator/;
+    root /fleetbase/api/public;
     index index.html;
-    try_files $uri $uri/ /fleetops/docs-navigator/index.html;
+    try_files $uri $uri/ =404;
+  }
+
+  # Serve Swagger UI for Rides API as static files
+  location = /rides/docs {
+    absolute_redirect off;
+    return 302 /rides/docs/;
+  }
+
+  location /rides/docs/ {
+    root /fleetbase/api/public;
+    index index.html;
+    try_files $uri $uri/ =404;
   }
   location / {
     proxy_set_header Host            $host;
