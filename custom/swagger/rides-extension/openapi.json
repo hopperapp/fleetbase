@@ -160,9 +160,17 @@
                     "type": "string",
                     "format": "date-time",
                     "description": "Optional. Required if is_scheduled is true. The future datetime when the ride should occur."
+                  },
+                  "pickup_place_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of a saved Place to use as pickup. If provided, pickup_latitude and pickup_longitude are omitted."
+                  },
+                  "dropoff_place_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of a saved Place to use as dropoff. If provided, dropoff_latitude and dropoff_longitude are omitted."
                   }
                 },
-                "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
+                "required": ["vehicle_category_uuid", "distance_meters", "duration_seconds", "pricing_method"]
               }
             }
           }
@@ -728,6 +736,107 @@
         ],
         "responses": {
           "200": { "description": "إحصائيات السائق المجمعة." }
+        }
+      }
+    },
+    "/customer/places": {
+      "get": {
+        "summary": "List Saved Places",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "Array of places owned natively by the customer." }
+        }
+      },
+      "post": {
+        "summary": "Save a new Location",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Home", "description": "Location Title." },
+                  "street1": { "type": "string", "example": "123 Main St", "description": "Street name or generic text for the address." },
+                  "building": { "type": "string", "example": "Apt 4B", "description": "Optional apartment or building number details." },
+                  "phone": { "type": "string", "example": "+123456789", "description": "Phone number specific to this place if needed." },
+                  "type": { "type": "string", "example": "apartment", "description": "Location type e.g., home, company, apartment." },
+                  "latitude": { "type": "number", "description": "The explicit float latitude coordinate." },
+                  "longitude": { "type": "number", "description": "The explicit float longitude coordinate." },
+                  "meta": { 
+                    "type": "object", 
+                    "properties": {
+                      "driver_notes": { "type": "string", "example": "Call me upon arrival." }
+                    },
+                    "description": "Optional arbitrary metadata map (JSON). Ideal for storing Custom driver notes."
+                  }
+                },
+                "required": ["name", "latitude", "longitude"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Place securely created and mapped polymorphism to the customer." }
+        }
+      }
+    },
+    "/customer/places/{id}": {
+      "put": {
+        "summary": "Update Saved Place",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Place." }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "street1": { "type": "string" },
+                  "building": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "type": { "type": "string" },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "meta": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Place updated safely honoring ownership limits." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Saved Place",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Place." }
+        ],
+        "responses": {
+          "200": { "description": "Place deleted securely." }
         }
       }
     }

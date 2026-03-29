@@ -31,6 +31,14 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                 // Estimates
                 $router->post('estimate', 'CustomerRideController@estimate');
 
+                // Places (Saved Locations)
+                $router->group(['prefix' => 'places'], function () use ($router) {
+                    $router->get('/', 'CustomerPlaceController@index');
+                    $router->post('/', 'CustomerPlaceController@store');
+                    $router->put('{id}', 'CustomerPlaceController@update');
+                    $router->delete('{id}', 'CustomerPlaceController@destroy');
+                });
+
                 // Rides
                 $router->group(['prefix' => 'rides'], function () use ($router) {
                     $router->post('', 'CustomerRideController@store'); // Request a ride

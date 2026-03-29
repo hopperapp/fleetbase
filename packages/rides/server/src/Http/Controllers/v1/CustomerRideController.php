@@ -26,10 +26,10 @@ class CustomerRideController extends Controller
     {
         $request->validate([
             'vehicle_category_uuid'      => 'required|uuid|exists:vehicle_categories,uuid',
-            'pickup_latitude'            => 'required|numeric',
-            'pickup_longitude'           => 'required|numeric',
-            'dropoff_latitude'           => 'required|numeric',
-            'dropoff_longitude'          => 'required|numeric',
+            'pickup_latitude'            => 'required_without:pickup_place_uuid|nullable|numeric',
+            'pickup_longitude'           => 'required_without:pickup_place_uuid|nullable|numeric',
+            'dropoff_latitude'           => 'required_without:dropoff_place_uuid|nullable|numeric',
+            'dropoff_longitude'          => 'required_without:dropoff_place_uuid|nullable|numeric',
             'pickup_address'             => 'nullable|string',
             'dropoff_address'            => 'nullable|string',
             'distance_meters'            => 'required|integer',
@@ -39,8 +39,11 @@ class CustomerRideController extends Controller
             'payment_method'             => 'nullable|in:cash,transfer,wallet,card',
             'passenger_count'            => 'nullable|integer|min:1',
             'currency'                   => 'nullable|string|size:3',
+            'currency'                   => 'nullable|string|size:3',
             'vehicle_sub_category_uuid'  => 'nullable|string',
             'store_uuid'                 => 'nullable|string',
+            'pickup_place_uuid'          => 'nullable|string',
+            'dropoff_place_uuid'         => 'nullable|string',
             'is_scheduled'               => 'nullable|boolean',
             'scheduled_at'               => 'nullable|date',
             'meta'                       => 'nullable|array',
@@ -63,20 +66,43 @@ class CustomerRideController extends Controller
         $category = VehicleCategory::find($request->input('vehicle_category_uuid'));
         $estimatedPrice = $category ? $category->calculateFare($distance, $duration) : 0;
 
-        // Initialize places (create inline since we have lat/lng)
-        $pickupPlace = Place::create([
-            'company_uuid' => $companyUuid,
-            'name'         => 'Pickup Location',
-            'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('pickup_latitude'), $request->input('pickup_longitude')),
-            'address'      => $request->input('pickup_address', 'Unknown Address'),
-        ]);
+        // Resolve or Initialize Pickup Place
+        if ($request->filled('pickup_place_uuid')) {
+            $pickupPlace = Place::where('uuid', $request->input('pickup_place_uuid'))
+                                ->where('owner_uuid', $customerUuid)
+                                ->firstOrFail();
+            // Automatically inherit coordinates from the saved place (since payload expects coords from ride model)
+            $request->merge([
+                'pickup_latitude'  => $pickupPlace->location->getLat(),
+                'pickup_longitude' => $pickupPlace->location->getLng(),
+            ]);
+        } else {
+            $pickupPlace = Place::create([
+                'company_uuid' => $companyUuid,
+                'name'         => 'Pickup Location',
+                'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('pickup_latitude'), $request->input('pickup_longitude')),
+                'address'      => $request->input('pickup_address', 'Unknown Address'),
+            ]);
+        }
 
-        $dropoffPlace = Place::create([
-            'company_uuid' => $companyUuid,
-            'name'         => 'Dropoff Location',
-            'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('dropoff_latitude'), $request->input('dropoff_longitude')),
-            'address'      => $request->input('dropoff_address', 'Unknown Address'),
-        ]);
+        // Resolve or Initialize Dropoff Place
+        if ($request->filled('dropoff_place_uuid')) {
+            $dropoffPlace = Place::where('uuid', $request->input('dropoff_place_uuid'))
+                                 ->where('owner_uuid', $customerUuid)
+                                 ->firstOrFail();
+            // Automatically inherit coordinates
+            $request->merge([
+                'dropoff_latitude'  => $dropoffPlace->location->getLat(),
+                'dropoff_longitude' => $dropoffPlace->location->getLng(),
+            ]);
+        } else {
+            $dropoffPlace = Place::create([
+                'company_uuid' => $companyUuid,
+                'name'         => 'Dropoff Location',
+                'location'     => new \Fleetbase\LaravelMysqlSpatial\Types\Point($request->input('dropoff_latitude'), $request->input('dropoff_longitude')),
+                'address'      => $request->input('dropoff_address', 'Unknown Address'),
+            ]);
+        }
 
         // Determine pricing method and status
         $pricingMethod = $request->input('pricing_method', 'auto');
