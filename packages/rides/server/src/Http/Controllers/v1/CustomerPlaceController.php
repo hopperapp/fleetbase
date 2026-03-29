@@ -35,25 +35,46 @@ class CustomerPlaceController extends Controller
         $request->validate([
             'name'      => 'required|string|max:255',
             'street1'   => 'nullable|string|max:255',
-            'building'  => 'nullable|string|max:255',
-            'phone'     => 'nullable|string|max:50',
-            'type'      => 'nullable|string|max:50',
-            'latitude'  => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'meta'      => 'nullable|array',
+            'street2'              => 'nullable|string|max:255',
+            'city'                 => 'nullable|string|max:255',
+            'province'             => 'nullable|string|max:255',
+            'postal_code'          => 'nullable|string|max:50',
+            'neighborhood'         => 'nullable|string|max:255',
+            'district'             => 'nullable|string|max:255',
+            'security_access_code' => 'nullable|string|max:255',
+            'country'              => 'nullable|string|max:255',
+            'remarks'              => 'nullable|string|max:1000',
+            'phone'                => 'nullable|string|max:50',
+            'type'                 => 'nullable|string|max:50',
+            'latitude'             => 'required|numeric',
+            'longitude'            => 'required|numeric',
+            'meta'                 => 'nullable|array',
         ]);
 
+        $meta = $request->input('meta', []);
+        if ($request->filled('remarks')) {
+            $meta['remarks'] = $request->input('remarks');
+        }
+
         $place = Place::create([
-            'company_uuid' => $companyUuid,
-            'owner_uuid'   => $customerUuid,
-            'owner_type'   => 'Fleetbase\FleetOps\Models\Contact',
-            'name'         => $request->input('name'),
-            'street1'      => $request->input('street1'),
-            'building'     => $request->input('building'),
-            'phone'        => $request->input('phone'),
-            'type'         => $request->input('type', 'destination'),
-            'location'     => new Point($request->input('latitude'), $request->input('longitude')),
-            'meta'         => $request->input('meta', []),
+            'company_uuid'         => $companyUuid,
+            'owner_uuid'           => $customerUuid,
+            'owner_type'           => 'Fleetbase\FleetOps\Models\Contact',
+            'name'                 => $request->input('name'),
+            'street1'              => $request->input('street1'),
+            'street2'              => $request->input('street2'),
+            'city'                 => $request->input('city'),
+            'province'             => $request->input('province'),
+            'postal_code'          => $request->input('postal_code'),
+            'neighborhood'         => $request->input('neighborhood'),
+            'district'             => $request->input('district'),
+            'building'             => $request->input('building'),
+            'security_access_code' => $request->input('security_access_code'),
+            'country'              => $request->input('country'),
+            'phone'                => $request->input('phone'),
+            'type'                 => $request->input('type', 'destination'),
+            'location'             => new Point($request->input('latitude'), $request->input('longitude')),
+            'meta'                 => $meta,
         ]);
 
         return response()->json(['message' => 'Place saved successfully.', 'place' => $place], 201);
@@ -78,15 +99,34 @@ class CustomerPlaceController extends Controller
         $request->validate([
             'name'      => 'nullable|string|max:255',
             'street1'   => 'nullable|string|max:255',
-            'building'  => 'nullable|string|max:255',
-            'phone'     => 'nullable|string|max:50',
-            'type'      => 'nullable|string|max:50',
-            'latitude'  => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'meta'      => 'nullable|array',
+            'building'             => 'nullable|string|max:255',
+            'street2'              => 'nullable|string|max:255',
+            'city'                 => 'nullable|string|max:255',
+            'province'             => 'nullable|string|max:255',
+            'postal_code'          => 'nullable|string|max:50',
+            'neighborhood'         => 'nullable|string|max:255',
+            'district'             => 'nullable|string|max:255',
+            'security_access_code' => 'nullable|string|max:255',
+            'country'              => 'nullable|string|max:255',
+            'remarks'              => 'nullable|string|max:1000',
+            'phone'                => 'nullable|string|max:50',
+            'type'                 => 'nullable|string|max:50',
+            'latitude'             => 'nullable|numeric',
+            'longitude'            => 'nullable|numeric',
+            'meta'                 => 'nullable|array',
         ]);
 
-        $updates = $request->only(['name', 'street1', 'building', 'phone', 'type', 'meta']);
+        $updates = $request->only([
+            'name', 'street1', 'street2', 'city', 'province', 'postal_code',
+            'neighborhood', 'district', 'building', 'security_access_code',
+            'country', 'phone', 'type', 'meta'
+        ]);
+
+        if ($request->has('remarks')) {
+            $meta = $updates['meta'] ?? $place->meta ?? [];
+            $meta['remarks'] = $request->input('remarks');
+            $updates['meta'] = $meta;
+        }
 
         if ($request->filled('latitude') && $request->filled('longitude')) {
             $updates['location'] = new Point($request->input('latitude'), $request->input('longitude'));
