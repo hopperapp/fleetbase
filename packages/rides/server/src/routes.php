@@ -58,6 +58,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->get('available', 'DriverRideController@available');
                     $router->get('{id}', 'DriverRideController@show');
                     $router->post('{id}/status', 'DriverRideController@updateStatus');
+                    $router->post('{id}/cancel', 'DriverRideController@cancel');
                     $router->post('{id}/rate', 'DriverRideController@rate');
                 });
 

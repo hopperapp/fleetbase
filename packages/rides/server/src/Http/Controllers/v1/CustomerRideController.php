@@ -41,6 +41,8 @@ class CustomerRideController extends Controller
             'currency'                   => 'nullable|string|size:3',
             'vehicle_sub_category_uuid'  => 'nullable|string',
             'store_uuid'                 => 'nullable|string',
+            'is_scheduled'               => 'nullable|boolean',
+            'scheduled_at'               => 'nullable|date',
             'meta'                       => 'nullable|array',
         ]);
 
@@ -106,9 +108,69 @@ class CustomerRideController extends Controller
             'pickup_place_uuid'         => $pickupPlace->uuid,
             'dropoff_place_uuid'        => $dropoffPlace->uuid,
             'status'                    => $status,
+            'is_scheduled'              => $request->boolean('is_scheduled'),
+            'scheduled_at'              => $request->input('scheduled_at'),
             'passenger_count'           => $request->input('passenger_count', 1),
             'meta'                      => $request->input('meta', []),
         ]);
+
+        // **SCHEDULED RIDES - FLEETOPS SCHEDULER SYNC**
+        // If this ride is explicitly scheduled for later, we must immediately create the native Order
+        // so that it maps straight to the Fleetbase Dispatch board (without a driver yet).
+        if ($ride->is_scheduled && $ride->scheduled_at) {
+            $payload = Payload::create([
+                'company_uuid'       => $ride->company_uuid,
+                'pickup_uuid'        => $ride->pickup_place_uuid,
+                'dropoff_uuid'       => $ride->dropoff_place_uuid,
+            ]);
+
+            $store = \Fleetbase\Storefront\Models\Store::where('uuid', $ride->store_uuid)->first();
+
+            $orderConfig = null;
+            if ($store && $store->order_config_uuid) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('uuid', $store->order_config_uuid)->first();
+            }
+
+            if (!$orderConfig) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
+                    ->where(function ($q) {
+                        $q->where('key', 'passenger-transport')
+                        ->orWhere('name', 'like', '%passenger%')
+                        ->orWhere('name', 'like', '%ride%')
+                        ->orWhere('name', 'like', '%transport%');
+                    })
+                    ->first();
+            }
+
+            if (!$orderConfig) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)->first();
+            }
+
+            $network = \Fleetbase\Storefront\Models\Network::where('uuid', $ride->network_uuid)->first();
+
+            $order = Order::create([
+                'company_uuid'          => $ride->company_uuid,
+                'order_config_uuid'     => $orderConfig ? $orderConfig->uuid : null,
+                'payload_uuid'          => $payload->uuid,
+                'customer_uuid'         => $ride->customer_uuid,
+                'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
+                'driver_assigned_uuid'  => null, // Unassigned natively 
+                'vehicle_assigned_uuid' => null, // Unassigned natively
+                'type'                  => 'passenger-transport',
+                'status'                => 'created',
+                'scheduled_at'          => \Carbon\Carbon::parse($ride->scheduled_at)->toDateTimeString(),
+                'adhoc'                 => false,
+                'meta'                  => [
+                    'ride_uuid'             => $ride->uuid,
+                    'ride_public_id'        => $ride->public_id,
+                    'pricing_method'        => $ride->pricing_method,
+                    'storefront'            => $store ? $store->name : null,
+                    'storefront_id'         => $store ? $store->public_id : null,
+                ],
+            ]);
+
+            $ride->update(['order_uuid' => $order->uuid]);
+        }
 
         // Dispatch broadcast to drivers
         event(new RideRequested($ride));
@@ -197,6 +259,13 @@ class CustomerRideController extends Controller
         // Validate cancel state
         if (!$ride->isCancelable()) {
             return response()->error('This ride cannot be canceled at this stage.', 422);
+        }
+
+        // **Whitelist Safe Cancellation Approach**
+        // A customer can only cancel while the ride is safely in these pre-transit stages.
+        $allowedCancellableStatuses = [Ride::STATUS_PENDING, Ride::STATUS_SEARCHING, Ride::STATUS_BIDDING, Ride::STATUS_ACCEPTED];
+        if (!in_array($ride->status, $allowedCancellableStatuses)) {
+            return response()->error('You cannot cancel this ride at its current stage. Please contact your assigned driver directly.', 422);
         }
 
         // Actually cancel it
@@ -292,68 +361,81 @@ class CustomerRideController extends Controller
         ]);
 
         // **CRITICAL FLEETOPS SYNC**
-        // Now that a driver is confirmed, we construct the native FleetOps Order.
-        $payload = Payload::create([
-            'company_uuid'       => $ride->company_uuid,
-            'pickup_uuid'        => $ride->pickup_place_uuid,
-            'dropoff_uuid'       => $ride->dropoff_place_uuid,
-        ]);
+        // If the order was already pre-created (e.g., Scheduled Rides), simply update the driver assignment.
+        // Otherwise, construct the native FleetOps Order right now.
+        if ($ride->order_uuid && ($order = Order::where('uuid', $ride->order_uuid)->first())) {
+            $order->update([
+                'driver_assigned_uuid'  => $bid->driver_uuid,
+                'vehicle_assigned_uuid' => $bid->vehicle_uuid,
+            ]);
+            
+            // Optionally update Order details in meta
+            $meta = $order->meta ?? [];
+            $meta['final_price'] = $ride->final_price;
+            $order->update(['meta' => $meta]);
+        } else {
+            $payload = Payload::create([
+                'company_uuid'       => $ride->company_uuid,
+                'pickup_uuid'        => $ride->pickup_place_uuid,
+                'dropoff_uuid'       => $ride->dropoff_place_uuid,
+            ]);
 
-        // Fetch Store to attach to Storefront View
-        $store = \Fleetbase\Storefront\Models\Store::where('uuid', $ride->store_uuid)->first();
+            // Fetch Store to attach to Storefront View
+            $store = \Fleetbase\Storefront\Models\Store::where('uuid', $ride->store_uuid)->first();
 
-        // 1. Try to get the specific OrderConfig linked to this exact Store
-        $orderConfig = null;
-        if ($store && $store->order_config_uuid) {
-            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('uuid', $store->order_config_uuid)->first();
+            // 1. Try to get the specific OrderConfig linked to this exact Store
+            $orderConfig = null;
+            if ($store && $store->order_config_uuid) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('uuid', $store->order_config_uuid)->first();
+            }
+
+            // 2. Fallback to searching the company's configs for keywords
+            if (!$orderConfig) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
+                    ->where(function ($q) {
+                        $q->where('key', 'passenger-transport') // Standard fallback
+                        ->orWhere('name', 'like', '%passenger%')
+                        ->orWhere('name', 'like', '%ride%')
+                        ->orWhere('name', 'like', '%transport%');
+                    })
+                    ->first();
+            }
+
+            // 3. Absolute fallback to the first custom order config found for this company
+            if (!$orderConfig) {
+                $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)->first();
+            }
+            // Fetch the network to also link it to the Network Dashboard
+            $network = \Fleetbase\Storefront\Models\Network::where('uuid', $ride->network_uuid)->first();
+
+            $order = Order::create([
+                'company_uuid'          => $ride->company_uuid,
+                'order_config_uuid'     => $orderConfig ? $orderConfig->uuid : null,
+                'payload_uuid'          => $payload->uuid,
+                'customer_uuid'         => $ride->customer_uuid,
+                'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
+                'driver_assigned_uuid'  => $bid->driver_uuid,
+                'vehicle_assigned_uuid' => $bid->vehicle_uuid,
+                'type'                  => 'passenger-transport',
+                'status'                => 'created',
+                'adhoc'                 => false,
+                'meta'                  => [
+                    'ride_uuid'             => $ride->uuid,
+                    'ride_public_id'        => $ride->public_id,
+                    'vehicle_category'      => $ride->vehicleCategory?->name,
+                    'pricing_method'        => $ride->pricing_method,
+                    'final_price'           => $ride->final_price,
+                    'payment_method'        => $ride->payment_method,
+                    'storefront'            => $store ? $store->name : null,
+                    'storefront_id'         => $store ? $store->public_id : null,
+                    'storefront_network'    => $network ? $network->name : null,
+                    'storefront_network_id' => $network ? $network->public_id : null,
+                ],
+            ]);
+
+            // Link the native Order to our Ride
+            $ride->update(['order_uuid' => $order->uuid]);
         }
-
-        // 2. Fallback to searching the company's configs for keywords
-        if (!$orderConfig) {
-            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)
-                ->where(function ($q) {
-                    $q->where('key', 'passenger-transport') // Standard fallback
-                      ->orWhere('name', 'like', '%passenger%')
-                      ->orWhere('name', 'like', '%ride%')
-                      ->orWhere('name', 'like', '%transport%');
-                })
-                ->first();
-        }
-
-        // 3. Absolute fallback to the first custom order config found for this company
-        if (!$orderConfig) {
-            $orderConfig = \Fleetbase\FleetOps\Models\OrderConfig::where('company_uuid', $ride->company_uuid)->first();
-        }
-        // Fetch the network to also link it to the Network Dashboard
-        $network = \Fleetbase\Storefront\Models\Network::where('uuid', $ride->network_uuid)->first();
-
-        $order = Order::create([
-            'company_uuid'          => $ride->company_uuid,
-            'order_config_uuid'     => $orderConfig ? $orderConfig->uuid : null,
-            'payload_uuid'          => $payload->uuid,
-            'customer_uuid'         => $ride->customer_uuid,
-            'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
-            'driver_assigned_uuid'  => $bid->driver_uuid,
-            'vehicle_assigned_uuid' => $bid->vehicle_uuid,
-            'type'                  => 'passenger-transport',
-            'status'                => 'created',
-            'adhoc'                 => false,
-            'meta'                  => [
-                'ride_uuid'             => $ride->uuid,
-                'ride_public_id'        => $ride->public_id,
-                'vehicle_category'      => $ride->vehicleCategory?->name,
-                'pricing_method'        => $ride->pricing_method,
-                'final_price'           => $ride->final_price,
-                'payment_method'        => $ride->payment_method,
-                'storefront'            => $store ? $store->name : null,
-                'storefront_id'         => $store ? $store->public_id : null,
-                'storefront_network'    => $network ? $network->name : null,
-                'storefront_network_id' => $network ? $network->public_id : null,
-            ],
-        ]);
-
-        // Link the native Order to our Ride
-        $ride->update(['order_uuid' => $order->uuid]);
 
         // Dispatch the Order in FleetOps (triggers native lifecycle)
         $order->dispatchWithActivity();
