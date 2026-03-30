@@ -168,6 +168,10 @@
                   "dropoff_place_uuid": {
                     "type": "string",
                     "description": "Optional. The UUID of a saved Place to use as dropoff. If provided, dropoff_latitude and dropoff_longitude are omitted."
+                  },
+                  "preferred_driver_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID or Public ID of a favorite driver. WARNING: If this driver is offline or active on another ride, the API will fail immediately with a 422 Unprocessable Entity error (Synchronous Busy Check)."
                   }
                 },
                 "required": ["vehicle_category_uuid", "distance_meters", "duration_seconds", "pricing_method"]
@@ -283,6 +287,49 @@
         },
         "responses": {
           "200": { "description": "تم تقييم السائق بنجاح." }
+        }
+      }
+    },
+    "/customer/favorite-drivers": {
+      "get": {
+        "summary": "List Favorite Drivers",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "Array of complete Driver objects stored natively in the customer's metadata." }
+        }
+      }
+    },
+    "/customer/favorite-drivers/{driver_id}": {
+      "post": {
+        "summary": "Add Favorite Driver",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "driver_id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the target Driver to favorite." }
+        ],
+        "responses": {
+          "200": { "description": "Driver successfully appended to the customer's favorite list." }
+        }
+      },
+      "delete": {
+        "summary": "Remove Favorite Driver",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "driver_id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the target Driver to remove." }
+        ],
+        "responses": {
+          "200": { "description": "Driver successfully removed from the customer's favorite list." }
         }
       }
     },
@@ -506,6 +553,36 @@
         },
         "responses": {
           "200": { "description": "تم تحديث الحالة ومزامنتها مع طلب FleetOps." }
+        }
+      }
+    },
+    "/driver/rides/{id}/reject": {
+      "post": {
+        "summary": "Reject Assigned Ride",
+        "description": "Allows a specifically assigned driver to reject an exclusive preferred ride ping, releasing it back to the global broadcast network.",
+        "tags": ["Driver - Lifecycle"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Ride." }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": { "type": "string", "description": "Optional string explaining why the assigned driver is rejecting the Ping." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ride successfully rejected by the favorite driver and re-broadcasted to the remaining public fleet." }
         }
       }
     },

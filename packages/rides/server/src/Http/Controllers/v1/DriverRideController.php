@@ -336,6 +336,44 @@ class DriverRideController extends Controller
 
 
     /**
+     * Reject a specifically assigned preferred ride ping.
+     */
+    public function reject(Request $request, string $id)
+    {
+        $driverUuid = session('driver');
+
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->with('order')->firstOrFail();
+
+        // Verify this ride is strictly targeting this particular driver
+        if ($ride->order && $ride->order->driver_assigned_uuid !== $driverUuid) {
+            return response()->error('Unauthorized or ride is not assigned to you.', 403);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        // Break the exclusive native binding
+        if ($ride->order) {
+            $ride->order->update(['driver_assigned_uuid' => null]);
+        }
+
+        // Revert the ride to searching state
+        $newStatus = $ride->pricing_method === 'bidding' ? Ride::STATUS_BIDDING : Ride::STATUS_SEARCHING;
+        $ride->update(['status' => $newStatus]);
+
+        // Programmatically push the ride back out to the global socket pool
+        event(new \Hopper\Rides\Events\RideRequested($ride));
+
+        return response()->json([
+            'message' => 'Ride rejected gracefully and released to the public pool.',
+            'reason_logged' => $request->input('reason')
+        ]);
+    }
+
+    /**
      * Driver rates the passenger.
      */
     public function rate(Request $request, string $id)

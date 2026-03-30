@@ -39,6 +39,13 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->delete('{id}', 'CustomerPlaceController@destroy');
                 });
 
+                // Favorite Drivers
+                $router->group(['prefix' => 'favorite-drivers'], function () use ($router) {
+                    $router->get('/', 'CustomerFavoriteDriverController@index');
+                    $router->post('{driver_id}', 'CustomerFavoriteDriverController@store');
+                    $router->delete('{driver_id}', 'CustomerFavoriteDriverController@destroy');
+                });
+
                 // Rides
                 $router->group(['prefix' => 'rides'], function () use ($router) {
                     $router->post('', 'CustomerRideController@store'); // Request a ride
@@ -66,6 +73,7 @@ Route::prefix(config('rides.api.routing.prefix', 'rides'))->namespace('Hopper\Ri
                     $router->get('available', 'DriverRideController@available');
                     $router->get('{id}', 'DriverRideController@show');
                     $router->post('{id}/status', 'DriverRideController@updateStatus');
+                    $router->post('{id}/reject', 'DriverRideController@reject');
                     $router->post('{id}/cancel', 'DriverRideController@cancel');
                     $router->post('{id}/rate', 'DriverRideController@rate');
                 });

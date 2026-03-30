@@ -44,6 +44,7 @@ class CustomerRideController extends Controller
             'store_uuid'                 => 'nullable|string',
             'pickup_place_uuid'          => 'nullable|string',
             'dropoff_place_uuid'         => 'nullable|string',
+            'preferred_driver_uuid'      => 'nullable|string',
             'is_scheduled'               => 'nullable|boolean',
             'scheduled_at'               => 'nullable|date',
             'meta'                       => 'nullable|array',
@@ -57,6 +58,22 @@ class CustomerRideController extends Controller
 
         if (!$companyUuid || !$customerUuid) {
             return response()->error('Authentication failed: Missing company or customer context.', 401);
+        }
+
+        // **Synchronous Busy Check for Favorite Drivers**
+        $preferredDriver = null;
+        if ($request->filled('preferred_driver_uuid')) {
+            $preferredDriver = \Fleetbase\FleetOps\Models\Driver::where('uuid', $request->input('preferred_driver_uuid'))
+                                ->orWhere('public_id', $request->input('preferred_driver_uuid'))
+                                ->first();
+
+            if (!$preferredDriver) {
+                return response()->error('The preferred driver could not be found.', 404);
+            }
+
+            if (!$preferredDriver->online || $preferredDriver->current_job_uuid !== null) {
+                return response()->json(['error' => 'Your preferred driver is currently offline or busy.'], 422);
+            }
         }
 
         $distance = (int) $request->input('distance_meters', 5000);
@@ -140,10 +157,10 @@ class CustomerRideController extends Controller
             'meta'                      => $request->input('meta', []),
         ]);
 
-        // **SCHEDULED RIDES - FLEETOPS SCHEDULER SYNC**
-        // If this ride is explicitly scheduled for later, we must immediately create the native Order
-        // so that it maps straight to the Fleetbase Dispatch board (without a driver yet).
-        if ($ride->is_scheduled && $ride->scheduled_at) {
+        // **NATIVE SYNC - FLEETOPS ORDER DISPATCH**
+        // We must immediately create the native Order either if the ride is scheduled, 
+        // OR if there is an explicit driver preferred, so that the Dispatch board captures the assignment loop cleanly.
+        if (($ride->is_scheduled && $ride->scheduled_at) || $preferredDriver) {
             $payload = Payload::create([
                 'company_uuid'       => $ride->company_uuid,
                 'pickup_uuid'        => $ride->pickup_place_uuid,
@@ -180,11 +197,11 @@ class CustomerRideController extends Controller
                 'payload_uuid'          => $payload->uuid,
                 'customer_uuid'         => $ride->customer_uuid,
                 'customer_type'         => 'Fleetbase\FleetOps\Models\Contact',
-                'driver_assigned_uuid'  => null, // Unassigned natively 
-                'vehicle_assigned_uuid' => null, // Unassigned natively
+                'driver_assigned_uuid'  => $preferredDriver ? $preferredDriver->uuid : null, // Exclusive Override
+                'vehicle_assigned_uuid' => $preferredDriver ? $preferredDriver->vehicle_uuid : null, 
                 'type'                  => 'passenger-transport',
                 'status'                => 'created',
-                'scheduled_at'          => \Carbon\Carbon::parse($ride->scheduled_at)->toDateTimeString(),
+                'scheduled_at'          => $ride->scheduled_at ? \Carbon\Carbon::parse($ride->scheduled_at)->toDateTimeString() : null,
                 'adhoc'                 => false,
                 'meta'                  => [
                     'ride_uuid'             => $ride->uuid,
