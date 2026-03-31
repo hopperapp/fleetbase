@@ -206,6 +206,42 @@ class DriverRideController extends Controller
             return response()->error('This ride cannot be canceled at this stage.', 422);
         }
 
+        // **REBOUND STRATEGY FOR SCHEDULED RIDES**
+        if ($ride->is_scheduled && $ride->scheduled_at && now()->lt(\Carbon\Carbon::parse($ride->scheduled_at))) {
+            $ride->update([
+                'status'        => $ride->pricing_method === 'bidding' ? Ride::STATUS_BIDDING : Ride::STATUS_SEARCHING,
+                'driver_uuid'   => null,
+                'vehicle_uuid'  => null,
+                'final_price'   => null,
+                'accepted_at'   => null,
+            ]);
+
+            // Sync with Native FleetOps Order to unassign it
+            if ($ride->order) {
+                $ride->order->update([
+                    'status'                => 'created', // unassigned back to board
+                    'driver_assigned_uuid'  => null,
+                    'vehicle_assigned_uuid' => null,
+                ]);
+            }
+
+            // Invalidate their active bid
+            if ($ride->pricing_method === 'bidding') {
+                \Hopper\Rides\Models\RideBid::where('ride_uuid', $ride->uuid)
+                    ->where('driver_uuid', session('driver'))
+                    ->where('status', \Hopper\Rides\Models\RideBid::STATUS_ACCEPTED)
+                    ->update(['status' => \Hopper\Rides\Models\RideBid::STATUS_WITHDRAWN]);
+            }
+
+            // Broadcast back to the pool
+            event(new \Hopper\Rides\Events\RideRequested($ride));
+
+            return response()->json([
+                'message' => 'Ride unassigned successfully. It has been returned to the pool for other drivers.',
+                'ride'    => $ride,
+            ]);
+        }
+
         $ride->update([
             'status'        => Ride::STATUS_CANCELED,
             'canceled_by'   => 'driver',
@@ -241,6 +277,17 @@ class DriverRideController extends Controller
 
         $previous = $ride->status;
         $rideUpdate = ['status' => $statusCode];
+
+        // **1-Hour Buffer Rule for Scheduled Rides**
+        if ($ride->is_scheduled && $ride->scheduled_at) {
+            $progressionStatuses = ['driver_en_route', 'arrived_at_pickup', 'arrived', 'in_transit', 'started'];
+            if (in_array($statusCode, $progressionStatuses) && $previous === Ride::STATUS_ACCEPTED) {
+                $scheduledAt = \Carbon\Carbon::parse($ride->scheduled_at);
+                if (now()->diffInMinutes($scheduledAt, false) > 60) {
+                    return response()->error('You cannot start this trip more than 60 minutes before the scheduled pickup time.', 422);
+                }
+            }
+        }
 
         // Custom model-level logic for Ride-Hailing Stage Mapping
         if ($statusCode === 'started' || $statusCode === Ride::STATUS_IN_TRANSIT) {
@@ -287,6 +334,44 @@ class DriverRideController extends Controller
     }
 
 
+
+    /**
+     * Reject a specifically assigned preferred ride ping.
+     */
+    public function reject(Request $request, string $id)
+    {
+        $driverUuid = session('driver');
+
+        $ride = Ride::where(function ($q) use ($id) {
+            $q->where('public_id', $id)->orWhere('uuid', $id);
+        })->with('order')->firstOrFail();
+
+        // Verify this ride is strictly targeting this particular driver
+        if ($ride->order && $ride->order->driver_assigned_uuid !== $driverUuid) {
+            return response()->error('Unauthorized or ride is not assigned to you.', 403);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:500'
+        ]);
+
+        // Break the exclusive native binding
+        if ($ride->order) {
+            $ride->order->update(['driver_assigned_uuid' => null]);
+        }
+
+        // Revert the ride to searching state
+        $newStatus = $ride->pricing_method === 'bidding' ? Ride::STATUS_BIDDING : Ride::STATUS_SEARCHING;
+        $ride->update(['status' => $newStatus]);
+
+        // Programmatically push the ride back out to the global socket pool
+        event(new \Hopper\Rides\Events\RideRequested($ride));
+
+        return response()->json([
+            'message' => 'Ride rejected gracefully and released to the public pool.',
+            'reason_logged' => $request->input('reason')
+        ]);
+    }
 
     /**
      * Driver rates the passenger.

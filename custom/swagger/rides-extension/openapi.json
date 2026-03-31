@@ -151,9 +151,30 @@
                   "vehicle_sub_category_uuid": {
                     "type": "string",
                     "description": "اختياري. الـ UUID لفئة فرعية محددة للمركبة (مثل 'دراجة نارية بفرو') لتخصيص الطلب."
+                  },
+                  "is_scheduled": {
+                    "type": "boolean",
+                    "description": "Optional. Flag to indicating if the ride is scheduled for a future time. Required to sync with FleetOps Scheduler."
+                  },
+                  "scheduled_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Optional. Required if is_scheduled is true. The future datetime when the ride should occur."
+                  },
+                  "pickup_place_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of a saved Place to use as pickup. If provided, pickup_latitude and pickup_longitude are omitted."
+                  },
+                  "dropoff_place_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID of a saved Place to use as dropoff. If provided, dropoff_latitude and dropoff_longitude are omitted."
+                  },
+                  "preferred_driver_uuid": {
+                    "type": "string",
+                    "description": "Optional. The UUID or Public ID of a favorite driver. WARNING: If this driver is offline or active on another ride, the API will fail immediately with a 422 Unprocessable Entity error (Synchronous Busy Check)."
                   }
                 },
-                "required": ["vehicle_category_uuid", "pickup_latitude", "pickup_longitude", "dropoff_latitude", "dropoff_longitude", "distance_meters", "duration_seconds", "pricing_method"]
+                "required": ["vehicle_category_uuid", "distance_meters", "duration_seconds", "pricing_method"]
               }
             }
           }
@@ -209,6 +230,36 @@
         }
       }
     },
+    "/customer/rides/{id}/cancel": {
+      "post": {
+        "summary": "Cancel Ride",
+        "description": "Cancel the ride booking. Protected by en_route validation ensuring customers cannot cancel if driver is arriving.",
+        "tags": ["Customer - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancel_reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم إلغاء الرحلة بنجاح." },
+          "422": { "description": "لا يمكن الإلغاء في هذه المرحلة لأن السائق في الطريق." }
+        }
+      }
+    },
     "/customer/rides/{id}/rate": {
       "post": {
         "summary": "Rate Driver",
@@ -236,6 +287,168 @@
         },
         "responses": {
           "200": { "description": "تم تقييم السائق بنجاح." }
+        }
+      }
+    },
+    "/customer/favorite-drivers": {
+      "get": {
+        "summary": "List Favorite Drivers",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "Array of complete Driver objects stored natively in the customer's metadata." }
+        }
+      }
+    },
+    "/customer/favorite-drivers/{driver_id}": {
+      "post": {
+        "summary": "Add Favorite Driver",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "driver_id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the target Driver to favorite." }
+        ],
+        "responses": {
+          "200": { "description": "Driver successfully appended to the customer's favorite list." }
+        }
+      },
+      "delete": {
+        "summary": "Remove Favorite Driver",
+        "tags": ["Customer - Favorite Drivers"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "driver_id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the target Driver to remove." }
+        ],
+        "responses": {
+          "200": { "description": "Driver successfully removed from the customer's favorite list." }
+        }
+      }
+    },
+      "/customer/places": {
+      "get": {
+        "summary": "List Saved Places",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "responses": {
+          "200": { "description": "Array of places owned natively by the customer." }
+        }
+      },
+      "post": {
+        "summary": "Save a new Location",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Home", "description": "Location Title." },
+                  "street1": { "type": "string", "example": "123 Main St", "description": "Street name or generic text for the address." },
+                  "street2": { "type": "string", "description": "Optional secondary street address." },
+                  "city": { "type": "string", "description": "City name." },
+                  "province": { "type": "string", "description": "Province or state." },
+                  "postal_code": { "type": "string", "description": "Postal or ZIP code." },
+                  "neighborhood": { "type": "string", "description": "Neighborhood name." },
+                  "district": { "type": "string", "description": "District name." },
+                  "building": { "type": "string", "example": "Apt 4B", "description": "Optional apartment or building number details." },
+                  "security_access_code": { "type": "string", "description": "Optional gate or security code." },
+                  "country": { "type": "string", "description": "Country code or name." },
+                  "remarks": { "type": "string", "description": "Optional custom remarks specific to this location." },
+                  "phone": { "type": "string", "example": "+123456789", "description": "Phone number specific to this place if needed." },
+                  "type": { "type": "string", "example": "apartment", "description": "Location type e.g., home, company, apartment." },
+                  "latitude": { "type": "number", "description": "The explicit float latitude coordinate." },
+                  "longitude": { "type": "number", "description": "The explicit float longitude coordinate." },
+                  "meta": { 
+                    "type": "object", 
+                    "properties": {
+                      "driver_notes": { "type": "string", "example": "Call me upon arrival." }
+                    },
+                    "description": "Optional arbitrary metadata map (JSON). Ideal for storing Custom driver notes."
+                  }
+                },
+                "required": ["name", "latitude", "longitude"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Place securely created and mapped polymorphism to the customer." }
+        }
+      }
+    },
+    "/customer/places/{id}": {
+      "put": {
+        "summary": "Update Saved Place",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Place." }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "street1": { "type": "string" },
+                  "street2": { "type": "string" },
+                  "city": { "type": "string" },
+                  "province": { "type": "string" },
+                  "postal_code": { "type": "string" },
+                  "neighborhood": { "type": "string" },
+                  "district": { "type": "string" },
+                  "building": { "type": "string" },
+                  "security_access_code": { "type": "string" },
+                  "country": { "type": "string" },
+                  "remarks": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "type": { "type": "string" },
+                  "latitude": { "type": "number" },
+                  "longitude": { "type": "number" },
+                  "meta": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Place updated safely honoring ownership limits." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Saved Place",
+        "tags": ["Customer - Places"],
+        "security": [
+          { "bearerAuth": [] },
+          { "customerToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Place." }
+        ],
+        "responses": {
+          "200": { "description": "Place deleted securely." }
         }
       }
     },
@@ -340,6 +553,65 @@
         },
         "responses": {
           "200": { "description": "تم تحديث الحالة ومزامنتها مع طلب FleetOps." }
+        }
+      }
+    },
+    "/driver/rides/{id}/reject": {
+      "post": {
+        "summary": "Reject Assigned Ride",
+        "description": "Allows a specifically assigned driver to reject an exclusive preferred ride ping, releasing it back to the global broadcast network.",
+        "tags": ["Driver - Lifecycle"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" }, "description": "Public ID or UUID of the Ride." }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": { "type": "string", "description": "Optional string explaining why the assigned driver is rejecting the Ping." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ride successfully rejected by the favorite driver and re-broadcasted to the remaining public fleet." }
+        }
+      }
+    },
+    "/driver/rides/{id}/cancel": {
+      "post": {
+        "summary": "Cancel / Drop out of Ride",
+        "description": "If a driver cancels an accepted ride, it executes a 'rebound strategy', unassigning them and returning the ride to the bidding pool without totally destroying it.",
+        "tags": ["Driver - Rides"],
+        "security": [
+          { "bearerAuth": [] },
+          { "driverToken": [] }
+        ],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancel_reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "تم إلغاء التعيين وتم إرجاع الرحلة لبركة السائقين." }
         }
       }
     },
@@ -663,5 +935,6 @@
         }
       }
     }
+
   }
 }

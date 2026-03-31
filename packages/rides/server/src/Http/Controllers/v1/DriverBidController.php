@@ -53,8 +53,17 @@ class DriverBidController extends Controller
         }
 
         // Calculate expiration correctly with fallback
-        $ttlMin = is_numeric(config('rides.bidding.ttl_minutes')) ? (int)config('rides.bidding.ttl_minutes') : 5;
-        $expiresAt = now()->addMinutes($ttlMin);
+        if ($ride->is_scheduled && $ride->scheduled_at) {
+            // Async Bidding: Valid until 60 minutes before the scheduled ride time
+            $scheduledAt = \Carbon\Carbon::parse($ride->scheduled_at);
+            $expiresAt = $scheduledAt->subMinutes(60);
+            if ($expiresAt->lt(now())) {
+                $expiresAt = now()->addMinutes(15); // Fallback buffer if bidding super close to cutoff
+            }
+        } else {
+            $ttlMin = is_numeric(config('rides.bidding.ttl_minutes')) ? (int)config('rides.bidding.ttl_minutes') : 5;
+            $expiresAt = now()->addMinutes($ttlMin);
+        }
 
         // Create the bid
         $bid = RideBid::create([

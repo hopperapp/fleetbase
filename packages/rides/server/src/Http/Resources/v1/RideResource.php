@@ -17,8 +17,10 @@ class RideResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'public_id' => $this->public_id,
-            'status'    => $this->status,
+            'public_id'    => $this->public_id,
+            'status'       => $this->status,
+            'is_scheduled' => (bool) $this->is_scheduled,
+            'scheduled_at' => $this->scheduled_at,
             'customer'  => new CustomerResource($this->customer),
             'driver'    => new DriverResource($this->driver),
             'order'     => $this->order ? [
