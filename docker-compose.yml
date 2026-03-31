@@ -88,6 +88,8 @@ services:
     image: fleetbase/fleetbase-api:latest
     volumes:
       - ./api/.env:/fleetbase/api/.env
+      - ./packages:/fleetbase/packages
+      - ./packages:/var/www/html/packages
     environment:
       ENVIRONMENT: development
       DATABASE_URL: "mysql://root@database/fleetbase"

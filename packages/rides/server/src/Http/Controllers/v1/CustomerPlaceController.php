@@ -15,6 +15,9 @@ class CustomerPlaceController extends Controller
     public function index(Request $request)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
 
         $places = Place::where('owner_uuid', $customerUuid)
             ->where('owner_type', 'Fleetbase\FleetOps\Models\Contact')
@@ -31,6 +34,10 @@ class CustomerPlaceController extends Controller
     {
         $customerUuid = session('customer');
         $companyUuid  = session('company');
+
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
 
         $request->validate([
             'name'      => 'required|string|max:255',
@@ -86,6 +93,9 @@ class CustomerPlaceController extends Controller
     public function update(Request $request, string $id)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
 
         $place = Place::where(function ($q) use ($id) {
             $q->where('public_id', $id)->orWhere('uuid', $id);
@@ -143,6 +153,9 @@ class CustomerPlaceController extends Controller
     public function destroy(Request $request, string $id)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
 
         $place = Place::where(function ($q) use ($id) {
             $q->where('public_id', $id)->orWhere('uuid', $id);

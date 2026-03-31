@@ -20,18 +20,12 @@
     "require": {
         "php": "^8.0",
         "appstract/laravel-opcache": "^4.0",
-<<<<<<< HEAD
-        "fleetbase/core-api": "^1.6.22",
-        "fleetbase/fleetops-api": "^0.6.23",
-        "fleetbase/registry-bridge": "^0.1.0",
-        "fleetbase/storefront-api": "^0.4.4",
-=======
         "fleetbase/core-api": "^1.6.38",
         "fleetbase/fleetops-api": "^0.6.38",
         "fleetbase/registry-bridge": "^0.1.8",
         "fleetbase/storefront-api": "^0.4.14",
         "fleetbase/ledger-api": "^0.0.1",
->>>>>>> 889b945650d07e87776c66af54d1c43a6fb843ce
+        "hopper/rides-api": "*",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^10.0",
         "laravel/octane": "^2.3",
@@ -44,7 +38,7 @@
         "psr/http-factory-implementation": "*",
         "resend/resend-php": "^0.14.0",
         "s-ichikawa/laravel-sendgrid-driver": "^4.0",
-        "stripe/stripe-php": "13.13.0",
+        "stripe/stripe-php": "^17.0",
         "symfony/mailgun-mailer": "^7.1",
         "symfony/postmark-mailer": "^7.1"
     },
@@ -59,7 +53,7 @@
     "repositories": [
         {
             "type": "path",
-            "url": "/fleetbase/packages/rides",
+            "url": "../packages/rides",
             "options": {
                 "symlink": true
             }

@@ -16,6 +16,10 @@ class CustomerFavoriteDriverController extends Controller
     public function index(Request $request)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
+
         $contact = Contact::where('uuid', $customerUuid)->firstOrFail();
 
         $favoriteDriverUuids = $contact->meta['favorite_drivers'] ?? [];
@@ -37,6 +41,10 @@ class CustomerFavoriteDriverController extends Controller
     public function store(Request $request, string $driverId)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
+
         $contact = Contact::where('uuid', $customerUuid)->firstOrFail();
 
         // Verify the driver exists
@@ -66,6 +74,10 @@ class CustomerFavoriteDriverController extends Controller
     public function destroy(Request $request, string $driverId)
     {
         $customerUuid = session('customer');
+        if (!$customerUuid) {
+            return response()->json(['error' => 'Authentication failed: Missing or invalid Customer-Token.'], 401);
+        }
+
         $contact = Contact::where('uuid', $customerUuid)->firstOrFail();
 
         // Resolve driver UUID if public_id was sent
