@@ -307,6 +307,7 @@ trait HasApiControllerBehavior
             /** @var FormRequest $formRequest */
             $formRequest = $requestClass::createFrom($request);
             $formRequest->setContainer(app())->setRedirector(app(Redirector::class));
+            $formRequest->setRouteResolver($request->getRouteResolver());
 
             $rules      = $formRequest->rules();
             $messages   = method_exists($formRequest, 'messages') ? $formRequest->messages() : [];
