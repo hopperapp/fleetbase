@@ -251,8 +251,8 @@ class Network extends StorefrontModel
             $value['required_checkout_min_amount'] = Money::apply($value['required_checkout_min_amount']);
         }
 
-        // Assign the array back — JSON cast handles encoding
-        $this->attributes['options'] = $value;
+        // Assign the array back — we must JSON encode it since the mutator bypasses the cast
+        $this->attributes['options'] = json_encode($value);
     }
 
     /**
