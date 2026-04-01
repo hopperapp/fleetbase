@@ -20,13 +20,14 @@
     "require": {
         "php": "^8.0",
         "appstract/laravel-opcache": "^4.0",
+        "cweagans/composer-patches": "^2.0",
         "fleetbase/core-api": "^1.6.38",
         "fleetbase/fleetops-api": "^0.6.38",
+        "fleetbase/ledger-api": "^0.0.1",
         "fleetbase/registry-bridge": "^0.1.8",
         "fleetbase/storefront-api": "^0.4.14",
-        "fleetbase/ledger-api": "^0.0.1",
-        "hopper/rides-api": "*",
         "guzzlehttp/guzzle": "^7.0.1",
+        "hopper/rides-api": "*",
         "laravel/framework": "^10.0",
         "laravel/octane": "^2.3",
         "laravel/tinker": "^2.9",
@@ -103,6 +104,15 @@
     "extra": {
         "laravel": {
             "dont-discover": []
+        },
+        "enable-patching": true,
+        "patches": {
+            "fleetbase/storefront-api": {
+                "Fix Array to string conversion in Network": "patches/fix-network-array.patch"
+            },
+            "fleetbase/core-api": {
+                "Fix User Update unique email validation": "patches/fix-user-update.patch"
+            }
         }
     },
     "config": {
@@ -111,6 +121,7 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
+            "cweagans/composer-patches": true,
             "php-http/discovery": true
         }
     },

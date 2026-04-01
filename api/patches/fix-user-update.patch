@@ -1,0 +1,11 @@
+--- a/src/Http/Requests/UpdateUserRequest.php
++++ b/src/Http/Requests/UpdateUserRequest.php
+@@ -47,5 +47,5 @@
+             'email' => [
+                 'required',
+                 'string',
+                 'email',
+                 'max:255',
+-                Rule::unique('users', 'email')->ignore($this->route('id'))->whereNull('deleted_at'),
++                Rule::unique('users', 'email')->ignore($this->route('user') ?? $this->route('id'))->whereNull('deleted_at'),
+             ],

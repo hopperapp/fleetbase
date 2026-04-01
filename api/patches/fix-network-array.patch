@@ -1,0 +1,8 @@
+--- a/server/src/Models/Network.php
++++ b/server/src/Models/Network.php
+@@ -252,5 +252,5 @@
+     public function setOptionsAttribute($value)
+     {
+-        $this->attributes['options'] = $value;
++        $this->attributes['options'] = json_encode($value);
+     }
