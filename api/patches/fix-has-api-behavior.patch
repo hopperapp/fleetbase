@@ -1,0 +1,11 @@
+--- a/src/Traits/HasApiControllerBehavior.php
++++ b/src/Traits/HasApiControllerBehavior.php
+@@ -306,6 +306,7 @@
+         if ($requestClass) {
+             /** @var FormRequest $formRequest */
+             $formRequest = $requestClass::createFrom($request);
+             $formRequest->setContainer(app())->setRedirector(app(Redirector::class));
++            $formRequest->setRouteResolver($request->getRouteResolver());
+ 
+             $rules      = $formRequest->rules();
+             $messages   = method_exists($formRequest, 'messages') ? $formRequest->messages() : [];
