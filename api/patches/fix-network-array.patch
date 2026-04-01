@@ -1,8 +1,8 @@
 --- a/server/src/Models/Network.php
 +++ b/server/src/Models/Network.php
-@@ -252,5 +252,5 @@
-     public function setOptionsAttribute($value)
-     {
+@@ -253,5 +253,5 @@
+ 
+         // Assign the array back — JSON cast handles encoding
 -        $this->attributes['options'] = $value;
 +        $this->attributes['options'] = json_encode($value);
      }
