@@ -108,11 +108,11 @@
         "enable-patching": true,
         "patches": {
             "fleetbase/storefront-api": {
-                "Fix Array to string conversion in Network": "patches/fix-network-array.patch"
+                "Fix Array to string conversion in Network": "./patches/fix-network-array.patch"
             },
             "fleetbase/core-api": {
-                "Fix User Update unique email validation": "patches/fix-user-update.patch",
-                "Fix custom form requests route resolver": "patches/fix-has-api-behavior.patch"
+                "Fix User Update unique email validation": "./patches/fix-user-update.patch",
+                "Fix API Controller route behavior": "./patches/fix-has-api-behavior.patch"
             }
         }
     },
