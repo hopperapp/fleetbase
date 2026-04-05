@@ -109,6 +109,9 @@ RUN mkdir -p /var/www/.cache/composer && chown -R www-data:www-data /var/www/.ca
 # Optimize Composer Dependency Installation
 COPY --chown=www-data:www-data ./api/composer.json ./api/composer.lock /fleetbase/api/
 
+# Copy packages directory (required for path repositories in composer.json)
+COPY --chown=www-data:www-data ./packages /fleetbase/packages
+
 # Pre-install Composer dependencies
 RUN su www-data -s /bin/sh -c "composer install --no-scripts --optimize-autoloader --no-dev --no-cache"
 
@@ -167,5 +170,5 @@ CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=1000 --port=8000 
 
 # Application stage
 FROM base AS app
-ENTRYPOINT ["/sbin/ssm-parent", "-c", ".ssm-parent.yaml", "run", "--", "docker-php-entrypoint"]
+ENTRYPOINT ["docker-php-entrypoint"]
 CMD ["sh", "-c", "php artisan octane:frankenphp --max-requests=1000 --port=8000 --host=0.0.0.0"]

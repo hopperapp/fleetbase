@@ -52,6 +52,7 @@ builds/osx/frankenphp
 # build artifacts
 /builds/dist/
 /builds/linux/spc/downloads/*
+/logs/*
 *.exe
 *.dll
 *.so

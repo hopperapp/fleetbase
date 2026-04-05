@@ -39,7 +39,11 @@ services:
       # For development, use: SOCKETCLUSTER_OPTIONS: '{"origins":"http://localhost:*"}'
 
   scheduler:
-    image: fleetbase/fleetbase-api:latest
+    # image: fleetbase/fleetbase-api:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: scheduler-dev
     command: ["go-crond", "--verbose", "root:./crontab"]
     restart: unless-stopped
     environment:
@@ -54,7 +58,11 @@ services:
       - cache
 
   queue:
-    image: fleetbase/fleetbase-api:latest
+    # image: fleetbase/fleetbase-api:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: events-dev
     command: ["php", "artisan", "queue:work"]
     restart: unless-stopped
     healthcheck:
@@ -85,11 +93,16 @@ services:
       - ./console/fleetbase.config.json:/usr/share/nginx/html/fleetbase.config.json
 
   application:
-    image: fleetbase/fleetbase-api:latest
+    # image: fleetbase/fleetbase-api:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: app-dev
     volumes:
       - ./api/.env:/fleetbase/api/.env
       - ./packages:/fleetbase/packages
       - ./packages:/var/www/html/packages
+      - ./logs/application:/fleetbase/api/storage/logs
     environment:
       ENVIRONMENT: development
       DATABASE_URL: "mysql://root@database/fleetbase"

@@ -20,13 +20,13 @@
     "require": {
         "php": "^8.0",
         "appstract/laravel-opcache": "^4.0",
-        "fleetbase/core-api": "^1.6.38",
+        "fleetbase/core-api": "@dev",
         "fleetbase/fleetops-api": "^0.6.38",
         "fleetbase/ledger-api": "^0.0.1",
         "fleetbase/registry-bridge": "^0.1.8",
-        "fleetbase/storefront-api": "^0.4.14",
+        "fleetbase/storefront-api": "@dev",
         "guzzlehttp/guzzle": "^7.0.1",
-        "hopper/rides-api": "*",
+        "hopper/rides-api": "@dev",
         "laravel/framework": "^10.0",
         "laravel/octane": "^2.3",
         "laravel/tinker": "^2.9",
@@ -54,6 +54,20 @@
         {
             "type": "path",
             "url": "../packages/rides",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../packages/core-api",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../packages/storefront",
             "options": {
                 "symlink": true
             }
@@ -106,7 +120,7 @@
         }
     },
     "config": {
-        "secure-http": false, 
+        "secure-http": false,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
