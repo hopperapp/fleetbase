@@ -7,6 +7,10 @@ use Brick\Geo\Engine\GEOSEngine;
 use Fleetbase\Providers\CoreServiceProvider;
 use Fleetbase\Support\NotificationRegistry;
 use Fleetbase\Support\Utils;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Routing\Route;
 
 if (!Utils::classExists(CoreServiceProvider::class)) {
     throw new \Exception('FleetOps cannot be loaded without `fleetbase/core-api` installed!');
@@ -110,6 +114,23 @@ class FleetOpsServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/cache.stores.php', 'cache.stores');
         $this->mergeConfigFrom(__DIR__ . '/../../config/geocoder.php', 'geocoder');
         $this->mergeConfigFrom(__DIR__ . '/../../config/dompdf.php', 'dompdf');
+
+        if (class_exists(Scramble::class)) {
+            Scramble::registerApi('fleetops', [
+                'api_path' => 'fleetops/v1',
+                'api_domain' => null,
+                'info' => [
+                    'version' => '1.0.0',
+                    'description' => 'Dynamically generated OpenAPI spec for the Fleetbase FleetOps Extension.',
+                ],
+            ])
+            ->routes(function (Route $route) {
+                return str_starts_with($route->uri(), 'fleetops/v1');
+            })
+            ->withDocumentRouting(function (OpenApi $openApi) {
+                $openApi->secure(SecurityScheme::http('bearer'));
+            });
+        }
 
         // Register the GeometryEngine for GEOSEngine
         if (extension_loaded('geos')) {
