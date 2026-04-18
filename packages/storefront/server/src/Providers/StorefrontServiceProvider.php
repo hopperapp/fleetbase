@@ -4,6 +4,10 @@ namespace Fleetbase\Storefront\Providers;
 
 use Fleetbase\FleetOps\Providers\FleetOpsServiceProvider;
 use Fleetbase\Providers\CoreServiceProvider;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Routing\Route;
 
 if (!class_exists(CoreServiceProvider::class)) {
     throw new \Exception('Storefront cannot be loaded without `fleetbase/core-api` installed!');
@@ -103,5 +107,23 @@ class StorefrontServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/database.connections.php', 'database.connections');
         $this->mergeConfigFrom(__DIR__ . '/../../config/storefront.php', 'storefront');
         $this->mergeConfigFrom(__DIR__ . '/../../config/api.php', 'storefront.api');
+
+        if (class_exists(Scramble::class)) {
+            Scramble::registerApi('storefront', [
+                'api_path' => 'storefront/v1',
+                'api_domain' => null,
+                'info' => [
+                    'version' => '1.0.0',
+                    'description' => 'Dynamically generated OpenAPI spec for the Fleetbase Storefront Extension.',
+                ],
+            ])
+            ->routes(function (Route $route) {
+                return str_starts_with($route->uri(), 'storefront/v1');
+            })
+            ->withDocumentRouting(function (OpenApi $openApi) {
+                $openApi->secure(SecurityScheme::http('bearer'));
+                $openApi->secure(SecurityScheme::apiKey('header', 'Storefront-Key'));
+            });
+        }
     }
 }
