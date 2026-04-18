@@ -1,0 +1,3 @@
+[submodule "packages/rides"]
+	path = packages/rides
+	url = https://github.com/hopperapp/rides.git
