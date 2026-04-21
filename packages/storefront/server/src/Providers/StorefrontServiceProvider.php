@@ -7,6 +7,7 @@ use Fleetbase\Providers\CoreServiceProvider;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Dedoc\Scramble\Support\Generator\Server;
 use Illuminate\Routing\Route;
 
 if (!class_exists(CoreServiceProvider::class)) {
@@ -110,7 +111,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
 
         if (class_exists(Scramble::class)) {
             Scramble::registerApi('storefront', [
-                'api_path' => 'storefront/v1',
+                'api_path' => '',
                 'api_domain' => null,
                 'info' => [
                     'version' => '1.0.0',
@@ -125,6 +126,7 @@ class StorefrontServiceProvider extends CoreServiceProvider
                 document: 'docs/api/storefront.json'
             )
             ->afterOpenApiGenerated(function (OpenApi $openApi) {
+                $openApi->servers = [new Server(config('app.url'))];
                 $openApi->secure(SecurityScheme::http('bearer'));
                 $openApi->secure(SecurityScheme::apiKey('header', 'Storefront-Key'));
             });

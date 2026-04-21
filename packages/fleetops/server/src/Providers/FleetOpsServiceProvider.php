@@ -10,6 +10,7 @@ use Fleetbase\Support\Utils;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Dedoc\Scramble\Support\Generator\Server;
 use Illuminate\Routing\Route;
 
 if (!Utils::classExists(CoreServiceProvider::class)) {
@@ -115,9 +116,14 @@ class FleetOpsServiceProvider extends CoreServiceProvider
         $this->mergeConfigFrom(__DIR__ . '/../../config/geocoder.php', 'geocoder');
         $this->mergeConfigFrom(__DIR__ . '/../../config/dompdf.php', 'dompdf');
 
+        // Register the GeometryEngine for GEOSEngine
+        if (extension_loaded('geos')) {
+            GeometryEngineRegistry::set(new GEOSEngine());
+        }
+
         if (class_exists(Scramble::class)) {
             Scramble::registerApi('fleetops', [
-                'api_path' => 'fleetops/v1',
+                'api_path' => '',
                 'api_domain' => null,
                 'info' => [
                     'version' => '1.0.0',
@@ -125,20 +131,16 @@ class FleetOpsServiceProvider extends CoreServiceProvider
                 ],
             ])
             ->routes(function (Route $route) {
-                return str_starts_with($route->uri(), 'fleetops/v1');
+                return str_contains($route->uri(), 'fleet-ops');
             })
             ->expose(
                 ui: 'docs/api/fleetops',
                 document: 'docs/api/fleetops.json'
             )
             ->afterOpenApiGenerated(function (OpenApi $openApi) {
+                $openApi->servers = [new Server(config('app.url'))];
                 $openApi->secure(SecurityScheme::http('bearer'));
             });
-        }
-
-        // Register the GeometryEngine for GEOSEngine
-        if (extension_loaded('geos')) {
-            GeometryEngineRegistry::set(new GEOSEngine());
         }
     }
 
