@@ -127,7 +127,11 @@ class FleetOpsServiceProvider extends CoreServiceProvider
             ->routes(function (Route $route) {
                 return str_starts_with($route->uri(), 'fleetops/v1');
             })
-            ->withDocumentRouting(function (OpenApi $openApi) {
+            ->expose(
+                ui: 'docs/api/fleetops',
+                document: 'docs/api/fleetops.json'
+            )
+            ->afterOpenApiGenerated(function (OpenApi $openApi) {
                 $openApi->secure(SecurityScheme::http('bearer'));
             });
         }

@@ -25,7 +25,7 @@ Route::prefix(config('storefront.api.routing.prefix', 'storefront'))->namespace(
         Route::group(['prefix' => 'v1', 'namespace' => 'v1'], function ($router) {
             // storefront/v1/checkouts
             $router->group(['prefix' => 'checkouts'], function () use ($router) {
-                $router->match(['get', 'post'], 'capture-qpay', 'CheckoutController@captureQpayCallback');
+                $router->match(['get', 'post'], 'capture-qpay', 'CheckoutController@captureQPayCallback');
             });
         });
 

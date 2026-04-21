@@ -20,9 +20,10 @@
     "require": {
         "php": "^8.0",
         "appstract/laravel-opcache": "^4.0",
+        "dedoc/scramble": "*",
         "fleetbase/core-api": "@dev",
-        "fleetbase/fleetops-api": "^0.6.38",
-        "fleetbase/ledger-api": "^0.0.1",
+        "fleetbase/fleetops-api": "*",
+        "fleetbase/ledger-api": "*",
         "fleetbase/registry-bridge": "^0.1.8",
         "fleetbase/storefront-api": "@dev",
         "guzzlehttp/guzzle": "^7.0.1",
@@ -68,6 +69,20 @@
         {
             "type": "path",
             "url": "../packages/storefront",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../packages/ledger",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "../packages/fleetops",
             "options": {
                 "symlink": true
             }

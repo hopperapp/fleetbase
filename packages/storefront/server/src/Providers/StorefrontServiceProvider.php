@@ -120,7 +120,11 @@ class StorefrontServiceProvider extends CoreServiceProvider
             ->routes(function (Route $route) {
                 return str_starts_with($route->uri(), 'storefront/v1');
             })
-            ->withDocumentRouting(function (OpenApi $openApi) {
+            ->expose(
+                ui: 'docs/api/storefront',
+                document: 'docs/api/storefront.json'
+            )
+            ->afterOpenApiGenerated(function (OpenApi $openApi) {
                 $openApi->secure(SecurityScheme::http('bearer'));
                 $openApi->secure(SecurityScheme::apiKey('header', 'Storefront-Key'));
             });
