@@ -121,27 +121,25 @@ class FleetOpsServiceProvider extends CoreServiceProvider
             GeometryEngineRegistry::set(new GEOSEngine());
         }
 
-        if (class_exists(Scramble::class)) {
-            Scramble::registerApi('fleetops', [
-                'api_path' => '',
-                'api_domain' => null,
-                'info' => [
-                    'version' => '1.0.0',
-                    'description' => 'Dynamically generated OpenAPI spec for the Fleetbase FleetOps Extension.',
-                ],
-            ])
-            ->routes(function (Route $route) {
-                return str_contains($route->uri(), 'fleet-ops');
-            })
-            ->expose(
-                ui: 'docs/api/fleetops',
-                document: 'docs/api/fleetops.json'
-            )
-            ->afterOpenApiGenerated(function (OpenApi $openApi) {
-                $openApi->servers = [new Server(config('app.url'))];
-                $openApi->secure(SecurityScheme::http('bearer'));
-            });
-        }
+        \Dedoc\Scramble\Scramble::registerApi('fleetops', [
+            'api_path' => '',
+            'api_domain' => null,
+            'info' => [
+                'version' => '1.0.0',
+                'description' => 'Dynamically generated OpenAPI spec for the Fleetbase FleetOps Extension.',
+            ],
+        ])
+        ->routes(function (Route $route) {
+            return str_contains((string) $route->getActionName(), 'Fleetbase\\FleetOps');
+        })
+        ->expose(
+            ui: 'docs/api/fleetops',
+            document: 'docs/api/fleetops.json'
+        )
+        ->afterOpenApiGenerated(function (OpenApi $openApi) {
+            $openApi->servers = [new Server(config('app.url'))];
+            $openApi->secure(SecurityScheme::http('bearer'));
+        });
     }
 
     public function registerNotifications()

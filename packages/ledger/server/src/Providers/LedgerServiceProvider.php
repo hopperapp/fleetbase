@@ -100,32 +100,28 @@ class LedgerServiceProvider extends CoreServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/../routes.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../migrations');
 
-        if (class_exists(Scramble::class)) {
-            Scramble::registerApi('ledger', [
-                'api_path' => '',
-                'api_domain' => null,
-                'info' => [
-                    'version' => '1.0.0',
-                    'description' => 'Dynamically generated OpenAPI spec for the Fleetbase Ledger Extension.',
-                ],
-            ])
-            ->routes(function (Route $route) {
-                return str_contains($route->uri(), 'ledger/v1') || 
-                       str_contains($route->uri(), 'ledger/int') || 
-                       str_contains($route->uri(), 'ledger/public');
-            })
-            ->expose(
-                ui: 'docs/api/ledger',
-                document: 'docs/api/ledger.json'
-            )
-            ->afterOpenApiGenerated(function (OpenApi $openApi) {
-                $openApi->servers = [new Server(config('app.url'))];
-                $openApi->secure(SecurityScheme::http('bearer'));
-            });
-        }
-
         // Register event-listener bindings for the payment gateway system
         $this->registerPaymentEvents();
+        
+        \Dedoc\Scramble\Scramble::registerApi('ledger', [
+            'api_path' => '',
+            'api_domain' => null,
+            'info' => [
+                'version' => '1.0.0',
+                'description' => 'Dynamically generated OpenAPI spec for the Fleetbase Ledger Extension.',
+            ],
+        ])
+        ->routes(function (Route $route) {
+            return str_contains((string) $route->getActionName(), 'Fleetbase\\Ledger');
+        })
+        ->expose(
+            ui: 'docs/api/ledger',
+            document: 'docs/api/ledger.json'
+        )
+        ->afterOpenApiGenerated(function (OpenApi $openApi) {
+            $openApi->servers = [new Server(config('app.url'))];
+            $openApi->secure(SecurityScheme::http('bearer'));
+        });
 
         // Register the ledger-invoice context type with the template builder so
         // the frontend variable picker knows which variables are available when

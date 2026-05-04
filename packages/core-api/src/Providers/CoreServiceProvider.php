@@ -170,6 +170,30 @@ class CoreServiceProvider extends ServiceProvider
         $this->registerCustomBladeComponents();
         $this->mergeConfigFromSettings();
         $this->pingTelemetry();
+
+        if (class_exists(\Dedoc\Scramble\Scramble::class)) {
+            \Dedoc\Scramble\Scramble::registerApi('core', [
+                'api_path' => '',
+                'api_domain' => null,
+                'info' => [
+                    'version' => '1.0.0',
+                    'description' => 'Dynamically generated OpenAPI spec for the Fleetbase Core API.',
+                ],
+            ])
+            ->routes(function (\Illuminate\Routing\Route $route) {
+                $action = (string) $route->getActionName();
+                // Match Fleetbase\Http\Controllers but NOT Fleetbase\FleetOps etc.
+                return str_contains($action, 'Fleetbase\\Http\\Controllers') && !str_contains($action, 'Fleetbase\\FleetOps') && !str_contains($action, 'Fleetbase\\Storefront') && !str_contains($action, 'Fleetbase\\Ledger') && !str_contains($action, 'Hopper\\Rides');
+            })
+            ->expose(
+                ui: 'docs/api/core',
+                document: 'docs/api/core.json'
+            )
+            ->afterOpenApiGenerated(function (\Dedoc\Scramble\Support\Generator\OpenApi $openApi) {
+                $openApi->servers = [new \Dedoc\Scramble\Support\Generator\Server(config('app.url'))];
+                $openApi->secure(\Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'));
+            });
+        }
     }
 
     /**
