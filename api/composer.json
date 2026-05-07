@@ -20,7 +20,7 @@
     "require": {
         "php": "^8.0",
         "appstract/laravel-opcache": "^4.0",
-        "dedoc/scramble": "*",
+        "dedoc/scramble": "^0.13.22",
         "fleetbase/core-api": "@dev",
         "fleetbase/fleetops-api": "*",
         "fleetbase/ledger-api": "*",

@@ -415,6 +415,12 @@ class CustomerController extends Controller
             return response()->apiError('Authentication failed using password provided.', 401);
         }
 
+        // Prevent pending/rejected drivers from logging in
+        $driver = \Fleetbase\FleetOps\Models\Driver::where('user_uuid', $user->uuid)->first();
+        if ($driver && $driver->status !== 'active') {
+            return response()->apiError('غير مصرح له. حساب السائق الخاص بك قيد المراجعة أو مرفوض ولا يمكنك تسجيل الدخول حالياً.', 401);
+        }
+
         // get the storefront or network logging in for
         $about = Storefront::about(['company_uuid']);
 
@@ -734,6 +740,14 @@ class CustomerController extends Controller
 
         if (!$user) {
             return response()->apiError('Unable to verify code.');
+        }
+
+        // Prevent pending/rejected drivers from logging in
+        if ($user->type === 'driver') {
+            $driver = \Fleetbase\FleetOps\Models\Driver::where('user_uuid', $user->uuid)->first();
+            if ($driver && $driver->status !== 'active') {
+                return response()->apiError('غير مصرح له. حساب السائق الخاص بك قيد المراجعة أو مرفوض ولا يمكنك تسجيل الدخول حالياً.', 401);
+            }
         }
 
         // find and verify code
